@@ -1,5 +1,5 @@
 //pub type Arguments = &Vec<&Argument>;
-use std::fmt::{Display, Result as FmtResult, Formatter};
+use std::fmt::{Display, Result as FmtResult, Formatter, Debug};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum CommunicationDirection {
@@ -7,7 +7,7 @@ pub enum CommunicationDirection {
     EngineToGui
 }
 
-pub trait UciMessage<'a> : Display {
+pub trait UciMessage<'a> : Display + Debug {
 
     fn name(&'a self) -> &'a str;
 //    fn arguments(&self) -> Option<&Vec<&Argument>>;
@@ -50,7 +50,7 @@ impl Display for OptionType {
 
 
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub struct UciOption<T> where T: Display {
+pub struct UciOption<T> where T: Display + Debug {
     name: String,
     option_type: OptionType,
     min: Option<T>,
@@ -59,17 +59,17 @@ pub struct UciOption<T> where T: Display {
     var: Vec<T>
 }
 
-impl <T> UciOption<T> where T: Display {
+impl <T> UciOption<T> where T: Display + Debug {
 
 }
 
-impl <T> Display for UciOption<T> where T: Display {
+impl <T> Display for UciOption<T> where T: Display + Debug {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.serialize())
     }
 }
 
-impl <'a, T> UciMessage<'a> for UciOption<T> where T: Display {
+impl <'a, T> UciMessage<'a> for UciOption<T> where T: Display + Debug {
     fn name(&'a self) -> &'a str {
         self.name.as_str()
     }
@@ -171,3 +171,5 @@ impl UciFen {
         self.0.as_str()
     }
 }
+
+pub type MessageList<'a> = Vec<Box<dyn UciMessage<'a>>>;

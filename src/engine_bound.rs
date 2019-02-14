@@ -1,4 +1,4 @@
-use std::fmt::{Display, Result as FmtResult, Formatter};
+use std::fmt::{Display, Result as FmtResult, Formatter, Debug};
 
 use crate::uci::{UciMessage, CommunicationDirection, UciMove, UciFen};
 
@@ -118,13 +118,13 @@ pub struct SetOption<T> where T: Display {
     value: Option<T>
 }
 
-impl <T> Display for SetOption<T> where T: Display {
+impl <T> Display for SetOption<T> where T: Display + Debug {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.serialize())
     }
 }
 
-impl <'a, T> UciMessage<'a> for SetOption<T> where T: Display {
+impl <'a, T> UciMessage<'a> for SetOption<T> where T: Display + Debug {
     #[inline]
     fn name(&'a self) -> &'a str {
         self.name.as_str()
@@ -146,6 +146,6 @@ impl <'a, T> UciMessage<'a> for SetOption<T> where T: Display {
     }
 }
 
-impl <'a, T> EngineBoundMessage<'a> for SetOption<T> where T: Display {
+impl <'a, T> EngineBoundMessage<'a> for SetOption<T> where T: Display + Debug {
 
 }
