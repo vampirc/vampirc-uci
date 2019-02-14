@@ -1,14 +1,15 @@
+WHITESPACE = _{ " " | "\t" }
+
 commands = _{ (message)+ }
 
-message = _{ uci ~ NEWLINE* }
+message = _{ WHITESPACE* ~ (uci | debug | isready) ~ NEWLINE* }
 
-uci = { "uci" }
+uci = @{ "uci" }
+
+switch = { "on" | "off" }
+debug = { "debug" ~ switch }
+
+isready = { "isready" }
 
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
-
-ident = { (alpha | digit)+ }
-
-ident_list = _{ !digit ~ ident ~ (" " ~ ident)+ }
-          // ^
-          // ident_list rule is silent which means it produces no tokens

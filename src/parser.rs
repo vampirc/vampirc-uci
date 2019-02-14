@@ -18,10 +18,20 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
 
     pairs
         .map(|pair: Pair<_>| {
-            pair.as_rule()
-        }).map(|rule| {
-        match rule {
+        match pair.as_rule() {
             Rule::uci => UciMessage::Uci,
+            Rule::debug => {
+                for sp in pair.into_inner() {
+                    match sp.as_rule() {
+                        Rule::switch => {
+                            return UciMessage::Debug(sp.as_span().as_str().eq_ignore_ascii_case("on"));
+                        },
+                        _ => unimplemented!("Debug toggle")
+                    }
+                }
+                UciMessage::Debug(false)
+            },
+            Rule::isready => UciMessage::IsReady,
             _ => panic!("Unsupported")
         }
     })
@@ -44,5 +54,32 @@ mod tests {
             //let mbb = &(*mb);
             assert_eq!(mb, UciMessage::Uci);
         }
+    }
+
+    #[test]
+    fn test_debug_on() {
+        let ml = parse("debug    on\r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::Debug(true));
+    }
+
+    #[test]
+    fn test_debug_off() {
+        let ml = parse("debug off").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::Debug(false));
+    }
+
+    #[test]
+    fn test_debug_wrong_param() {
+        let ml = parse("debug abc\r\n");
+        assert_eq!(ml.is_err(), true);
+    }
+
+    #[test]
+    fn test_isready() {
+        let ml = parse(" \tisready  \r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::IsReady);
     }
 }
