@@ -9,7 +9,7 @@ uci = @{ "uci" }
 switch = { "on" | "off" }
 debug = { "debug" ~ switch }
 
-isready = { "isready" }
+isready = @{ "isready" }
 
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
