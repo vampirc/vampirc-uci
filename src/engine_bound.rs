@@ -1,6 +1,6 @@
 use std::fmt::{Display, Result as FmtResult, Formatter};
 
-use crate::uci::{UciMessage, CommunicationDirection};
+use crate::uci::{UciMessage, CommunicationDirection, UciMove, UciFen};
 
 pub trait EngineBoundMessage<'a> : UciMessage<'a> {
 
@@ -19,6 +19,11 @@ pub enum Command {
         later: bool,
         name: Option<String>,
         code: Option<String>
+    },
+    Position {
+        startpos: bool,
+        fen: Option<UciFen>,
+        moves: Vec<UciMove>
     },
     UciNewGame,
     Stop,
@@ -40,6 +45,7 @@ impl <'a> UciMessage<'a> for Command {
             Command::IsReady => "isready",
             Command::Register {..} => "register",
             Command::UciNewGame => "ucinewgame",
+            Command::Position {..} => "position",
             Command::Stop => "stop",
             Command::PonderHit => "ponderhit",
             Command::Quit => "quit"
@@ -65,10 +71,31 @@ impl <'a> UciMessage<'a> for Command {
                     s += format!("code {}", *c).as_str();
                 }
 
+                s
+            },
+            Command::Position { startpos, fen, moves} => {
+                let mut s = String::from("position ");
+                if *startpos {
+                    s += String::from("startpos").as_str();
+                } else if let Some(uci_fen) = fen {
+                    s +=  format!("fen {}", uci_fen.as_str()).as_str();
+                }
 
+                if moves.len() > 0 {
+                    s += String::from(" moves ").as_str();
+
+                    for (i, m) in moves.into_iter().enumerate() {
+                        s += format!("{}", *m).as_str();
+
+                        if i < moves.len() - 1 {
+                            s += String::from(" ").as_str();
+                        }
+                    }
+
+                }
 
                 s
-            }
+            },
             _ => self.name().to_string()
         }
     }

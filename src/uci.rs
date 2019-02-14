@@ -105,3 +105,69 @@ impl <'a, T> UciMessage<'a> for UciOption<T> where T: Display {
         CommunicationDirection::EngineToGui
     }
 }
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub enum ChessPiece {
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King
+}
+
+impl ChessPiece {
+    pub fn as_char(self) -> Option<char> {
+        match self {
+            ChessPiece::Pawn=> None,
+            ChessPiece::Knight => Some('n'),
+            ChessPiece::Bishop => Some('b'),
+            ChessPiece::Rook => Some('r'),
+            ChessPiece::Queen => Some('q'),
+            ChessPiece::King => Some('k')
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub struct UciSquare {
+    file: char,
+    rank: u8
+}
+
+impl Display for UciSquare {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+
+        write!(f, "{}{}", self.file, self.rank)
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub struct UciMove {
+    from: UciSquare,
+    to: UciSquare,
+    promotion: Option<ChessPiece>
+}
+
+impl Display for UciMove {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        let mut r = write!(f, "{}{}", self.from, self.to);
+
+        if let Some(p) = self.promotion {
+            if let Some(c) = p.as_char() {
+                r = write!(f, "{}", c);
+            }
+        }
+
+        r
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct UciFen(String);
+
+impl UciFen {
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
