@@ -1,3 +1,8 @@
+extern crate pest;
+
+pub mod uci;
+pub mod engine_bound;
+
 #[cfg(test)]
 mod tests {
     #[test]

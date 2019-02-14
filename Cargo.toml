@@ -1,7 +1,8 @@
 [package]
 name = "vampirc-uci"
 version = "0.1.0"
-authors = ["Matija Kejzar <matija@kejzar.si>"]
+authors = ["Matija Kejžar <matija@kejzar.si>"]
 edition = "2018"
 
 [dependencies]
+pest = "2.1"
