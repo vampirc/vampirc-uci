@@ -5,8 +5,7 @@ use pest::Parser;
 use pest::iterators::Pair;
 use pest::error::Error;
 
-use crate::uci::MessageList;
-use crate::engine_bound::Command;
+use crate::uci::{UciMessage, MessageList};
 
 #[derive(Parser)]
 #[grammar = "../res/uci.pest"]
@@ -22,13 +21,11 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
             pair.as_rule()
         }).map(|rule| {
         match rule {
-            Rule::uci => Command::Uci,
+            Rule::uci => UciMessage::Uci,
             _ => panic!("Unsupported")
         }
     })
-        .map(|msg| { Box::from(msg) })
-        .for_each(|box_msg| { ml.push(box_msg) })
-
+        .for_each(|msg| { ml.push(msg) })
     ;
 
 
@@ -41,14 +38,11 @@ mod tests {
 
     #[test]
     fn test_uci() {
-
-        let ml = parse("uci\r\nuci\r\n");
-//        for mb in ml.unwrap() {
-//            //let mbb = &(*mb);
-//            match *mb {
-//                Command::Uci => {},
-//                _ => panic!("Not UCI")
-//            }
-//        }
+        let ml = parse("uci\r\nuci\r\n").unwrap();
+        assert_eq!(ml.len(), 2);
+        for mb in ml {
+            //let mbb = &(*mb);
+            assert_eq!(mb, UciMessage::Uci);
+        }
     }
 }

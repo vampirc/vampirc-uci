@@ -3,7 +3,6 @@ extern crate pest;
 extern crate pest_derive;
 
 pub mod uci;
-pub mod engine_bound;
 mod parser;
 
 #[cfg(test)]
