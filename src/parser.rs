@@ -26,13 +26,42 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                         Rule::switch => {
                             return UciMessage::Debug(sp.as_span().as_str().eq_ignore_ascii_case("on"));
                         },
-                        _ => unimplemented!("Debug toggle")
+                        _ => unreachable!()
                     }
                 }
                 UciMessage::Debug(false)
             },
             Rule::isready => UciMessage::IsReady,
-            _ => panic!("Unsupported")
+            Rule::setoption => {
+                let mut name: String = String::default();
+                let mut value: String = String::default();
+
+
+                for sp in pair.into_inner() {
+                    match sp.as_rule() {
+                        Rule::option_internal => {
+                            for spi in sp.into_inner() {
+                                match spi.as_rule() {
+                                    Rule::option_name => {
+                                        name = spi.as_span().as_str().trim().to_string();
+                                    },
+                                    Rule::option_value => {
+                                        value = spi.as_span().as_str().to_string();
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        },
+//                        Rule::value => { value = sp.as_span().as_str().to_string(); },
+                        _ => ()
+                    }
+                }
+
+                let val = if value != String::default()  { Some(value) } else { None };
+                UciMessage::SetOption { name, value: val }
+
+            },
+            _ => unreachable!()
         }
     })
         .for_each(|msg| { ml.push(msg) })
@@ -81,5 +110,82 @@ mod tests {
         let ml = parse(" \tisready  \r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::IsReady);
+    }
+
+    #[test]
+    fn test_set_option_bool() {
+        let ml = parse("setoption name Nullmove value true\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        let so = &ml[0];
+
+        match so {
+            UciMessage::SetOption { name, value} => {
+
+                assert_eq!(*name, String::from("Nullmove"));
+                let val = value.clone();
+                assert_eq!(val.is_some(), true);
+                assert_eq!(val.unwrap().as_str(), String::from("true"));
+                assert_eq!(so.as_bool().unwrap(), true);
+            },
+            _ => unreachable!()
+        }
+    }
+
+    // setoption name Selectivity value 3\n
+    #[test]
+    fn test_set_option_int() {
+        let ml = parse("setoption name Selectivity is awesome value 3\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        let so = &ml[0];
+
+        match so {
+            UciMessage::SetOption { name, value} => {
+
+                assert_eq!(*name, String::from("Selectivity is awesome"));
+                let val = value.clone();
+                assert_eq!(val.is_some(), true);
+                assert_eq!(val.unwrap().as_str(), String::from("3"));
+                assert_eq!(so.as_bool().is_none(), true);
+                assert_eq!(so.as_i32().unwrap(), 3);
+            },
+            _ => unreachable!()
+        }
+    }
+
+    // setoption name Clear Hash
+    #[test]
+    fn test_set_option_button() {
+        let ml = parse("setoption name Clear Hash\r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        let so = &ml[0];
+
+        match so {
+            UciMessage::SetOption { name, value} => {
+
+                assert_eq!(*name, String::from("Clear Hash"));
+                let val = value.clone();
+                assert_eq!(val.is_some(), false);
+            },
+            _ => unreachable!()
+        }
+    }
+
+    #[test]
+    fn test_set_option_str() {
+        let ml = parse("setoption name NalimovPath value c:\\chess\\tb\\4;c:\\chess\\tb\\5\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        let so = &ml[0];
+
+        match so {
+            UciMessage::SetOption { name, value} => {
+
+                assert_eq!(*name, String::from("NalimovPath"));
+                let val = value.clone();
+                assert_eq!(val.is_some(), true);
+                assert_eq!(val.unwrap().as_str(), String::from("c:\\chess\\tb\\4;c:\\chess\\tb\\5"));
+                assert_eq!(so.as_bool(), None);
+            },
+            _ => unreachable!()
+        }
     }
 }

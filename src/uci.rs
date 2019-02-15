@@ -1,5 +1,8 @@
 //pub type Arguments = &Vec<&Argument>;
 use std::fmt::{Display, Result as FmtResult, Formatter, Debug};
+use crate::parser::parse;
+use std::str::FromStr;
+use std::error::Error;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum CommunicationDirection {
@@ -109,6 +112,59 @@ impl UciMessage {
 //            _ => CommunicationDirection::EngineToGui
         }
     }
+}
+
+impl UciMessage {
+
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            UciMessage::SetOption { value, .. } => {
+                if let Some(val) = value {
+                    let pr = str::parse(val.as_str());
+                    if pr.is_ok() {
+                        return Some(pr.unwrap());
+                    }
+                }
+
+                None
+            },
+            _ => None
+        }
+    }
+
+    pub fn as_i32(&self) -> Option<i32> {
+        match self {
+            UciMessage::SetOption { value, .. } => {
+                if let Some(val) = value {
+                    let pr = str::parse(val.as_str());
+                    if pr.is_ok() {
+                        return Some(pr.unwrap());
+                    }
+                }
+
+                None
+            },
+            _ => None
+        }
+    }
+
+//    pub fn as_value<T>(&self) -> Option<T> where T : FromStr {
+//        match self {
+//            UciMessage::SetOption { value, .. } => {
+//                if let Some(val) = value {
+//                    let pr: Result<T, Error>  = str::parse(val.as_str());
+//                    if pr.is_ok() {
+//                        let v: T = pr.unwrap();
+//                        return Some(v);
+//                    }
+//                }
+//
+//                None
+//            },
+//            _ => None
+//        }
+//    }
+
 }
 
 impl Display for UciMessage {

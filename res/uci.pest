@@ -2,14 +2,29 @@ WHITESPACE = _{ " " | "\t" }
 
 commands = _{ (message)+ }
 
-message = _{ WHITESPACE* ~ (uci | debug | isready) ~ NEWLINE* }
+message = _{ WHITESPACE* ~ (uci | debug | isready | setoption) ~ NEWLINE* }
 
-uci = @{ "uci" }
+uci = @{ ^"uci" }
 
-switch = { "on" | "off" }
-debug = { "debug" ~ switch }
+switch = { ^"on" | ^"off" }
+debug = { ^"debug" ~ switch }
 
-isready = @{ "isready" }
+isready = @{ ^"isready" }
+
+//setoption = { SOI ~ ^"setoption" ~ ^"name" ~ name  ~ value? ~ EOI}
+
+
+//name = { ANY+ ~ "value" }
+//value = { any }
+
+setoption = {^"setoption" ~ ^"name" ~ option_internal }
+option_internal = { option_name ~ "value"? ~ option_value? }
+option_name = { (!"value" ~ token)+ }
+option_value = { any }
+
+
+token = @{ (!(WHITESPACE | NEWLINE) ~ ANY)+ }
+any = { (!NEWLINE ~ ANY)+ }
 
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
