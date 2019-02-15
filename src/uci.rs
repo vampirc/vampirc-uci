@@ -1,5 +1,5 @@
 //pub type Arguments = &Vec<&Argument>;
-use std::fmt::{Display, Result as FmtResult, Formatter, Debug};
+use std::fmt::{Display, Result as FmtResult, Formatter};
 use crate::parser::parse;
 use std::str::FromStr;
 use std::error::Error;
@@ -36,6 +36,23 @@ pub enum UciMessage {
 }
 
 impl UciMessage {
+
+    pub fn register_later() -> UciMessage {
+        UciMessage::Register {
+            later: true,
+            name: None,
+            code: None
+        }
+    }
+
+    pub fn register_code(name: &str, code: &str) -> UciMessage {
+        UciMessage::Register {
+            later: false,
+            name: Some(name.to_string()),
+            code: Some(code.to_string())
+        }
+    }
+
     fn serialize(&self) -> String {
         match self {
             UciMessage::Debug(on) => if *on { String::from("debug on") } else { String::from("debug off") },
@@ -112,9 +129,6 @@ impl UciMessage {
 //            _ => CommunicationDirection::EngineToGui
         }
     }
-}
-
-impl UciMessage {
 
     pub fn as_bool(&self) -> Option<bool> {
         match self {
@@ -147,24 +161,6 @@ impl UciMessage {
             _ => None
         }
     }
-
-//    pub fn as_value<T>(&self) -> Option<T> where T : FromStr {
-//        match self {
-//            UciMessage::SetOption { value, .. } => {
-//                if let Some(val) = value {
-//                    let pr: Result<T, Error>  = str::parse(val.as_str());
-//                    if pr.is_ok() {
-//                        let v: T = pr.unwrap();
-//                        return Some(v);
-//                    }
-//                }
-//
-//                None
-//            },
-//            _ => None
-//        }
-//    }
-
 }
 
 impl Display for UciMessage {

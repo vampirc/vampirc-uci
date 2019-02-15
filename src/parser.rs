@@ -61,6 +61,31 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                 UciMessage::SetOption { name, value: val }
 
             },
+            Rule::register => {
+                for sp in pair.into_inner() {
+                    match sp.as_rule() {
+                        Rule::register_later => {
+                            return UciMessage::register_later();
+                        },
+                        Rule::register_nc => {
+                            let mut name: &str = "";
+
+                            for spi in sp.into_inner() {
+                                match spi.as_rule() {
+                                    Rule::register_name => { name = spi.as_span().as_str(); },
+                                    Rule::register_code => {
+                                        return UciMessage::register_code(name, spi.as_str());
+                                    },
+                                    _ => ()
+                                }
+                            }
+                        },
+                        _ => unreachable!()
+                    }
+                }
+
+                unreachable!()
+            },
             _ => unreachable!()
         }
     })
@@ -187,5 +212,29 @@ mod tests {
             },
             _ => unreachable!()
         }
+    }
+
+    #[test]
+    fn test_register_later() {
+        let ml = parse("REGISTER    lateR\r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::register_later());
+    }
+
+    #[test]
+    fn test_register_name_code() {
+        let ml = parse("register name Matija Kejžar code 4359874324\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::register_code("Matija Kejžar", "4359874324"));
+    }
+
+    #[test]
+    fn test_register_invalid() {
+        parse("register name Matija Kejžar\n").expect_err("Parse error expected.");
+    }
+
+    #[test]
+    fn test_register_invalid2() {
+        parse("register code XX-344-00LP name Matija Kejžar\n").expect_err("Parse error expected.");
     }
 }

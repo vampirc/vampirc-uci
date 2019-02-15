@@ -2,7 +2,7 @@ WHITESPACE = _{ " " | "\t" }
 
 commands = _{ (message)+ }
 
-message = _{ WHITESPACE* ~ (uci | debug | isready | setoption) ~ NEWLINE* }
+message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register) ~ NEWLINE* }
 
 uci = @{ ^"uci" }
 
@@ -11,17 +11,16 @@ debug = { ^"debug" ~ switch }
 
 isready = @{ ^"isready" }
 
-//setoption = { SOI ~ ^"setoption" ~ ^"name" ~ name  ~ value? ~ EOI}
-
-
-//name = { ANY+ ~ "value" }
-//value = { any }
-
 setoption = {^"setoption" ~ ^"name" ~ option_internal }
-option_internal = { option_name ~ "value"? ~ option_value? }
-option_name = { (!"value" ~ token)+ }
+option_internal = { option_name ~ ^"value"? ~ option_value? }
+option_name = { (!^"value" ~ token)+ }
 option_value = { any }
 
+register = { ^"register" ~ (register_later | register_nc) }
+register_later = { ^"later" }
+register_nc = {^"name" ~ register_name ~ ^"code" ~ register_code}
+register_name = { (!^"code" ~ token)+ }
+register_code = { any }
 
 token = @{ (!(WHITESPACE | NEWLINE) ~ ANY)+ }
 any = { (!NEWLINE ~ ANY)+ }
