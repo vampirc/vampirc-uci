@@ -1,10 +1,12 @@
 WHITESPACE = _{ " " | "\t" }
 
-commands = _{ (message)+ }
+commands = _{ SOI ~ (message ~ NEWLINE+)+}
 
-message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame) ~ NEWLINE* }
+commands_ignore_errors = _{ SOI ~ (message ~ NEWLINE+)* ~ EOI}
 
-uci = { ^"uci" ~ !non_ws}
+message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame) }
+
+uci = { ^"uci" ~ !non_ws }
 
 switch = { ^"on" | ^"off" }
 debug = { ^"debug" ~ switch }

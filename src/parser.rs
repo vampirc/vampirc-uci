@@ -122,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_debug_off() {
-        let ml = parse("debug off").unwrap();
+        let ml = parse("debug off\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::Debug(false));
     }
@@ -131,6 +131,12 @@ mod tests {
     fn test_debug_wrong_param() {
         let ml = parse("debug abc\r\n");
         assert_eq!(ml.is_err(), true);
+    }
+
+    #[test]
+    fn test_debug_cutoff() {
+        parse("debug    ontario\r\n").expect_err("Should not pass");
+
     }
 
     #[test]
