@@ -2,7 +2,7 @@ WHITESPACE = _{ " " | "\t" }
 
 commands = _{ SOI ~ ws_nl* ~ message+ ~ ws_nl*}
 
-message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit) ~ WHITESPACE*  ~ NEWLINE+}
+message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit | position) ~ WHITESPACE*  ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
 
@@ -31,6 +31,34 @@ stop = ${ ^"stop" ~ !non_ws }
 quit = ${ ^"quit" ~ !non_ws }
 
 ponderhit = { ^"ponderhit" }
+
+position = ${ ^"position" ~ WHITESPACE+ ~ (fen_pos | startpos) ~ WHITESPACE+ ~ ^"moves" ~WHITESPACE ~ a_move ~
+        (WHITESPACE+ ~ a_move)* }
+square = ${ file ~ rank }
+from_sq = { square }
+to_sq = { square }
+a_move = ${from_sq ~ to_sq ~ promotion? }
+promotion = { ^"q" | ^"r" | ^"n" | ^"b" }
+startpos = ${ ^"startpos" }
+piece_char = { ^"k" | ^"q" | ^"r" | ^"n" | ^"b" | ^"p" }
+rank = { '1'..'8' }
+file = { ('a'..'h') | ('A'..'H') }
+
+// FEN stuff
+fen_pos = _{ ^"fen" ~ WHITESPACE+ ~ fen }
+fen = ${ (fen_rank ~ rank_sep){7} ~ fen_rank ~ WHITESPACE+ ~ color ~ WHITESPACE+ ~ castling ~ WHITESPACE+ ~ en_passant
+        ~ WHITESPACE+ ~ ply_clock ~ WHITESPACE+ ~ move_num }
+rank_sep = _{ "/" }
+fen_rank = { (piece_char | rank){1,8} }
+color = {^"w" | ^"b"}
+fen_none = { "-" }
+castling_chars = { ^"k" | ^"q" }
+castling = { castling_chars{1,4} | fen_none }
+en_passant = { square | fen_none }
+counter = _{ ('0'..'9'){1,4} }
+ply_clock = { counter }
+move_num = { counter }
+
 
 token = @{ (!(WHITESPACE | NEWLINE) ~ ANY)+ }
 any = _{ !NEWLINE ~ ANY }

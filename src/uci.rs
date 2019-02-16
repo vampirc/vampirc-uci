@@ -258,7 +258,7 @@ impl Display for OptionType {
 //}
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
-pub enum ChessPiece {
+pub enum UciPiece {
     Pawn,
     Knight,
     Bishop,
@@ -267,23 +267,48 @@ pub enum ChessPiece {
     King,
 }
 
-impl ChessPiece {
+impl UciPiece {
     pub fn as_char(self) -> Option<char> {
         match self {
-            ChessPiece::Pawn => None,
-            ChessPiece::Knight => Some('n'),
-            ChessPiece::Bishop => Some('b'),
-            ChessPiece::Rook => Some('r'),
-            ChessPiece::Queen => Some('q'),
-            ChessPiece::King => Some('k')
+            UciPiece::Pawn => None,
+            UciPiece::Knight => Some('n'),
+            UciPiece::Bishop => Some('b'),
+            UciPiece::Rook => Some('r'),
+            UciPiece::Queen => Some('q'),
+            UciPiece::King => Some('k')
+        }
+    }
+}
+
+impl From<&str> for UciPiece {
+    fn from(s: &str) -> Self {
+
+        match s.to_ascii_lowercase().as_str() {
+            "n" => UciPiece::Knight,
+            "p" => UciPiece::Pawn,
+            "b" => UciPiece::Bishop,
+            "r" => UciPiece::Rook,
+            "k" => UciPiece::King,
+            "q" => UciPiece::Queen,
+            _ => panic!(format!("No piece mapping for {}", s))
         }
     }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciSquare {
-    file: char,
-    rank: u8,
+    pub file: char,
+    pub rank: u8,
+}
+
+impl UciSquare {
+
+    pub fn from(file: char, rank: u8) -> UciSquare {
+        UciSquare {
+            file,
+            rank
+        }
+    }
 }
 
 impl Display for UciSquare {
@@ -292,11 +317,20 @@ impl Display for UciSquare {
     }
 }
 
+impl Default for UciSquare {
+    fn default() -> Self {
+        UciSquare {
+            file: '\0',
+            rank: 0
+        }
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciMove {
-    from: UciSquare,
-    to: UciSquare,
-    promotion: Option<ChessPiece>,
+    pub from: UciSquare,
+    pub to: UciSquare,
+    pub promotion: Option<UciPiece>,
 }
 
 impl Display for UciMove {
@@ -314,11 +348,17 @@ impl Display for UciMove {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
-pub struct UciFen(String);
+pub struct UciFen(pub String);
 
 impl UciFen {
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+}
+
+impl From<&str> for UciFen {
+    fn from(s: &str) -> Self {
+        UciFen(s.to_string())
     }
 }
 
