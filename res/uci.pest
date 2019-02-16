@@ -11,10 +11,10 @@ uci = ${ ^"uci" ~ !non_ws }
 switch = { ^"on" | ^"off" }
 debug = ${ ^"debug" ~ WHITESPACE+ ~ switch }
 
-isready = @{ ^"isready" }
+isready = { ^"isready" }
 
-setoption = {^"setoption" ~ ^"name" ~ option_internal }
-option_internal = { option_name ~ (^"value" ~ option_value)? }
+setoption = ${^"setoption" ~ WHITESPACE+ ~ ^"name" ~ WHITESPACE+ ~ option_internal }
+option_internal = ${ option_name ~ (WHITESPACE+ ~ (^"value" ~ WHITESPACE+ ~ option_value))? }
 option_name = ${ option_token ~ (WHITESPACE+ ~ option_token)* }
 option_token = _{ !^"value" ~ token }
 option_value = { any+ }
