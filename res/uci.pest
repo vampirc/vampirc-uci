@@ -1,10 +1,8 @@
 WHITESPACE = _{ " " | "\t" }
 
-commands = _{ SOI ~ (message ~ NEWLINE+)+}
+commands = _{ SOI ~ ws_nl* ~ message+ ~ ws_nl*}
 
-commands_skip_errors = _{ SOI ~ (message ~ NEWLINE+)* ~ EOI}
-
-message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame) }
+message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame) ~ WHITESPACE*  ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
 
@@ -34,3 +32,4 @@ any = _{ !NEWLINE ~ ANY }
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
 non_ws = _{!(WHITESPACE | NEWLINE) ~ ANY*}
+ws_nl = _{ WHITESPACE | NEWLINE }
