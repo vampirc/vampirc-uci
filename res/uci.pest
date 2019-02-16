@@ -2,9 +2,9 @@ WHITESPACE = _{ " " | "\t" }
 
 commands = _{ (message)+ }
 
-message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register) ~ NEWLINE* }
+message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame) ~ NEWLINE* }
 
-uci = @{ ^"uci" }
+uci = { ^"uci" ~ !non_ws}
 
 switch = { ^"on" | ^"off" }
 debug = { ^"debug" ~ switch }
@@ -22,8 +22,11 @@ register_nc = {^"name" ~ register_name ~ ^"code" ~ register_code}
 register_name = { (!^"code" ~ token)+ }
 register_code = { any }
 
+ucinewgame = { ^"ucinewgame" }
+
 token = @{ (!(WHITESPACE | NEWLINE) ~ ANY)+ }
 any = { (!NEWLINE ~ ANY)+ }
 
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
+non_ws = {!(WHITESPACE | NEWLINE) ~ ANY*}

@@ -86,6 +86,9 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
 
                 unreachable!()
             },
+            Rule::ucinewgame => {
+                UciMessage::UciNewGame
+            }
             _ => unreachable!()
         }
     })
@@ -236,5 +239,12 @@ mod tests {
     #[test]
     fn test_register_invalid2() {
         parse("register code XX-344-00LP name Matija Kejžar\n").expect_err("Parse error expected.");
+    }
+
+    #[test]
+    fn test_ucinewgame() {
+        let ml = parse(" ucinewGAME \r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::UciNewGame);
     }
 }
