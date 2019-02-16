@@ -2,7 +2,7 @@ WHITESPACE = _{ " " | "\t" }
 
 commands = _{ SOI ~ ws_nl* ~ message+ ~ ws_nl*}
 
-message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame) ~ WHITESPACE*  ~ NEWLINE+}
+message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit) ~ WHITESPACE*  ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
 
@@ -25,6 +25,12 @@ register_token = _{ !^"code" ~ token }
 register_code = { any+ }
 
 ucinewgame = { ^"ucinewgame" }
+
+stop = ${ ^"stop" ~ !non_ws }
+
+quit = ${ ^"quit" ~ !non_ws }
+
+ponderhit = { ^"ponderhit" }
 
 token = @{ (!(WHITESPACE | NEWLINE) ~ ANY)+ }
 any = _{ !NEWLINE ~ ANY }

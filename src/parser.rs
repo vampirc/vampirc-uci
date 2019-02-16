@@ -6,6 +6,7 @@ use pest::iterators::Pair;
 use pest::error::Error;
 
 use crate::uci::{UciMessage, MessageList};
+use crate::uci::UciMessage::Uci;
 
 #[derive(Parser)]
 #[grammar = "../res/uci.pest"]
@@ -88,7 +89,16 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
             },
             Rule::ucinewgame => {
                 UciMessage::UciNewGame
-            }
+            },
+            Rule::stop => {
+                UciMessage::Stop
+            },
+            Rule::ponderhit => {
+                UciMessage::PonderHit
+            },
+            Rule::quit => {
+                UciMessage::Quit
+            },
             _ => unreachable!()
         }
     })
@@ -257,5 +267,31 @@ mod tests {
         let ml = parse(" ucinewGAME \r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::UciNewGame);
+    }
+
+    #[test]
+    fn test_stop() {
+        let ml = parse("stop\r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::Stop);
+    }
+
+    #[test]
+    fn test_stop_really_stop() {
+        parse("stopper\r\n").expect_err("Parse error expected for 'stopper'.");
+    }
+
+    #[test]
+    fn test_ponderhit() {
+        let ml = parse("PonderHit   \r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::PonderHit);
+    }
+
+    #[test]
+    fn test_quit() {
+        let ml = parse("QUIT\r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+        assert_eq!(ml[0], UciMessage::Quit);
     }
 }
