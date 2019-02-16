@@ -6,29 +6,29 @@ commands_ignore_errors = _{ SOI ~ (message ~ NEWLINE+)* ~ EOI}
 
 message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame) }
 
-uci = { ^"uci" ~ !non_ws }
+uci = ${ ^"uci" ~ !non_ws }
 
 switch = { ^"on" | ^"off" }
-debug = { ^"debug" ~ switch }
+debug = ${ ^"debug" ~ WHITESPACE+ ~ switch }
 
 isready = @{ ^"isready" }
 
 setoption = {^"setoption" ~ ^"name" ~ option_internal }
-option_internal = { option_name ~ ^"value"? ~ option_value? }
+option_internal = { option_name ~ (^"value" ~ option_value)? }
 option_name = { (!^"value" ~ token)+ }
-option_value = { any }
+option_value = { any+ }
 
 register = { ^"register" ~ (register_later | register_nc) }
 register_later = { ^"later" }
 register_nc = {^"name" ~ register_name ~ ^"code" ~ register_code}
 register_name = { (!^"code" ~ token)+ }
-register_code = { any }
+register_code = { any+ }
 
 ucinewgame = { ^"ucinewgame" }
 
 token = @{ (!(WHITESPACE | NEWLINE) ~ ANY)+ }
-any = { (!NEWLINE ~ ANY)+ }
+any = _{ !NEWLINE ~ ANY }
 
 alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
-non_ws = {!(WHITESPACE | NEWLINE) ~ ANY*}
+non_ws = _{!(WHITESPACE | NEWLINE) ~ ANY*}
