@@ -32,8 +32,8 @@ quit = ${ ^"quit" ~ !non_ws }
 
 ponderhit = { ^"ponderhit" }
 
-position = ${ ^"position" ~ WHITESPACE+ ~ (fen_pos | startpos) ~ WHITESPACE+ ~ ^"moves" ~WHITESPACE ~ a_move ~
-        (WHITESPACE+ ~ a_move)* }
+position = ${ ^"position" ~ WHITESPACE+ ~ (fen_pos | startpos) ~ WHITESPACE* ~ (^"moves" ~WHITESPACE ~ a_move ~
+        (WHITESPACE+ ~ a_move)*)* }
 square = ${ file ~ rank }
 from_sq = { square }
 to_sq = { square }

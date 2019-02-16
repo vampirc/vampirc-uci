@@ -180,6 +180,7 @@ fn parse_square(sq_pair: Pair<Rule>) -> UciSquare {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::uci::UciMessage::Uci;
 
     #[test]
     fn test_uci() {
@@ -469,5 +470,35 @@ mod tests {
     #[test]
     fn test_position_incorrect_fen() {
         parse("position fen 2k50/6PR/8/8/2b4P/8/6K1/8 w - - 0 53 moves g7g8q c4g8\r\n").expect_err("Parse should fail.");
+    }
+
+    #[test]
+    fn test_position_startpos_no_moves() {
+        let ml = parse("position   startpos\r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+
+        let pos = UciMessage::Position {
+            startpos: true,
+            fen: None,
+            moves: vec![]
+        };
+
+        assert_eq!(ml[0], pos);
+    }
+
+    #[test]
+    fn test_position_fen_no_moves() {
+        let ml = parse("position    fen 2k5/6PR/8/8/2b4P/8/6K1/8 w   - - 0 53\r\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+
+        let pos = UciMessage::Position {
+            startpos: false,
+            fen: Some(UciFen(String::from("2k5/6PR/8/8/2b4P/8/6K1/8 w   - - 0 53"))),
+            moves: vec![]
+        };
+
+        assert_eq!(ml[0], pos);
     }
 }
