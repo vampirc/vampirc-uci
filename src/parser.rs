@@ -128,6 +128,11 @@ mod tests {
     }
 
     #[test]
+    fn test_debugon() {
+        parse("debugon\r\n").expect_err("Should not parse 'debugon'");
+    }
+
+    #[test]
     fn test_debug_wrong_param() {
         let ml = parse("debug abc\r\n");
         assert_eq!(ml.is_err(), true);
@@ -135,7 +140,7 @@ mod tests {
 
     #[test]
     fn test_debug_cutoff() {
-        parse("debug    ontario\r\n").expect_err("Should not pass");
+        parse("debug    ontario\r\n").expect_err("Should not parse");
 
     }
 

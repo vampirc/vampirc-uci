@@ -19,10 +19,11 @@ option_name = ${ option_token ~ (WHITESPACE+ ~ option_token)* }
 option_token = _{ !^"value" ~ token }
 option_value = { any+ }
 
-register = { ^"register" ~ (register_later | register_nc) }
-register_later = { ^"later" }
-register_nc = {^"name" ~ register_name ~ ^"code" ~ register_code}
-register_name = { (!^"code" ~ token)+ }
+register = ${ ^"register" ~ WHITESPACE+ ~ (register_later | register_nc) }
+register_later = ${ ^"later" ~ !non_ws }
+register_nc = ${ ^"name" ~ WHITESPACE+ ~ register_name ~ WHITESPACE+ ~ ^"code" ~ WHITESPACE+ ~ register_code }
+register_name = ${ register_token ~ (WHITESPACE+ ~ register_token)* }
+register_token = _{ !^"code" ~ token }
 register_code = { any+ }
 
 ucinewgame = { ^"ucinewgame" }
