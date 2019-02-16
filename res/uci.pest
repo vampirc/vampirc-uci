@@ -2,7 +2,7 @@ WHITESPACE = _{ " " | "\t" }
 
 commands = _{ SOI ~ (message ~ NEWLINE+)+}
 
-commands_ignore_errors = _{ SOI ~ (message ~ NEWLINE+)* ~ EOI}
+commands_skip_errors = _{ SOI ~ (message ~ NEWLINE+)* ~ EOI}
 
 message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame) }
 
@@ -15,7 +15,8 @@ isready = @{ ^"isready" }
 
 setoption = {^"setoption" ~ ^"name" ~ option_internal }
 option_internal = { option_name ~ (^"value" ~ option_value)? }
-option_name = { (!^"value" ~ token)+ }
+option_name = { option_token ~ option_token* }
+option_token = _{ !^"value" ~ token }
 option_value = { any+ }
 
 register = { ^"register" ~ (register_later | register_nc) }
