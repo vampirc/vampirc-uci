@@ -491,8 +491,7 @@ mod tests {
     fn test_position_fen_no_moves() {
         let ml = parse("position    fen 2k5/6PR/8/8/2b4P/8/6K1/8 w   - - 0 53\r\n").unwrap();
         assert_eq!(ml.len(), 1);
-
-
+        
         let pos = UciMessage::Position {
             startpos: false,
             fen: Some(UciFen(String::from("2k5/6PR/8/8/2b4P/8/6K1/8 w   - - 0 53"))),

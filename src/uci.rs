@@ -33,6 +33,10 @@ pub enum UciMessage {
     Stop,
     PonderHit,
     Quit,
+    Go {
+        time_control: Option<UciTimeControl>,
+        search_control: Option<UciSearchControl>
+    }
 }
 
 impl UciMessage {
@@ -104,7 +108,60 @@ impl UciMessage {
                 }
 
                 s
-            }
+            },
+            UciMessage::Go { time_control, search_control} => {
+                let mut s = String::from("go ");
+
+                if let Some(tc) = time_control {
+                    match tc {
+                        UciTimeControl::Infinite => { s += "infinite "; },
+                        UciTimeControl::Ponder => { s += "ponder "; },
+                        UciTimeControl::MoveTime { milliseconds} => {
+                            s += format!("movetime {} ", *milliseconds).as_str();
+                        },
+                        UciTimeControl::TimeLeft { white_time, black_time, white_increment, black_increment, moves_to_go    } => {
+                            s += format!("wtime {} ", *white_time).as_str();
+                            s += format!("btime {} ", *black_time).as_str();
+
+                            if let Some(wi) = white_increment {
+                                s += format!("winc {} ", *wi).as_str();
+                            }
+
+                            if let Some(bi) = black_increment {
+                                s += format!("binc {} ", *bi).as_str();
+                            }
+
+                            if let Some(mtg) = moves_to_go {
+                                s += format!("movestogo {} ", *mtg).as_str();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                if let Some(sc) = search_control {
+                    if let Some(depth) = sc.depth {
+                        s += format!("depth {} ", depth).as_str();
+                    }
+
+                    if let Some(nodes) = sc.nodes {
+                        s += format!("nodes {} ", nodes).as_str();
+                    }
+
+                    if let Some(mate) = sc.mate {
+                        s += format!("mate {} ", mate).as_str();
+                    }
+
+                    if !sc.search_moves.is_empty() {
+                        s += " searchmoves ";
+                        for m in &sc.search_moves {
+                            s += format!("{} ", m).as_str();
+                        }
+                    }
+                }
+
+                s
+            },
             UciMessage::Uci => "uci".to_string(),
             UciMessage::IsReady => "isready".to_string(),
             UciMessage::UciNewGame => "ucinewgame".to_string(),
@@ -125,7 +182,8 @@ impl UciMessage {
             UciMessage::UciNewGame |
             UciMessage::Stop |
             UciMessage::PonderHit |
-            UciMessage::Quit => CommunicationDirection::GuiToEngine,
+            UciMessage::Quit |
+            UciMessage::Go { .. } => CommunicationDirection::GuiToEngine,
 //            _ => CommunicationDirection::EngineToGui
         }
     }
@@ -167,6 +225,30 @@ impl Display for UciMessage {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.serialize())
     }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub enum UciTimeControl {
+    Ponder,
+    Infinite,
+    TimeLeft {
+        white_time: u64,
+        black_time: u64,
+        white_increment: Option<u64>,
+        black_increment: Option<u64>,
+        moves_to_go: Option<u8>
+    },
+    MoveTime {
+        milliseconds: u64
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub struct UciSearchControl {
+    search_moves: Vec<UciMove>,
+    mate: Option<u8>,
+    depth: Option<u8>,
+    nodes: Option<u64>
 }
 
 //
