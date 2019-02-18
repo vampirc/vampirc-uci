@@ -5,7 +5,8 @@ use pest::Parser;
 use pest::iterators::Pair;
 use pest::error::Error;
 
-use crate::uci::{UciMessage, MessageList, UciFen, UciMove, UciSquare, UciPiece};
+use crate::uci::{UciMessage, MessageList, UciFen, UciMove, UciSquare, UciPiece, UciTimeControl, UciSearchControl};
+use crate::uci::UciMessage::Uci;
 
 #[derive(Parser)]
 #[grammar = "../res/uci.pest"]
@@ -18,137 +19,198 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
 
     pairs
         .map(|pair: Pair<_>| {
-        match pair.as_rule() {
-            Rule::uci => UciMessage::Uci,
-            Rule::debug => {
-                for sp in pair.into_inner() {
-                    match sp.as_rule() {
-                        Rule::switch => {
-                            return UciMessage::Debug(sp.as_span().as_str().eq_ignore_ascii_case("on"));
-                        },
-                        _ => unreachable!()
-                    }
-                }
-                UciMessage::Debug(false)
-            },
-            Rule::isready => UciMessage::IsReady,
-            Rule::setoption => {
-                let mut name: String = String::default();
-                let mut value: String = String::default();
-
-
-                for sp in pair.into_inner() {
-                    match sp.as_rule() {
-                        Rule::option_internal => {
-                            for spi in sp.into_inner() {
-                                match spi.as_rule() {
-                                    Rule::option_name => {
-                                        name = spi.as_span().as_str().trim().to_string();
-                                    },
-                                    Rule::option_value => {
-                                        value = spi.as_span().as_str().to_string();
-                                    }
-                                    _ => {}
-                                }
+            match pair.as_rule() {
+                Rule::uci => UciMessage::Uci,
+                Rule::debug => {
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::switch => {
+                                return UciMessage::Debug(sp.as_span().as_str().eq_ignore_ascii_case("on"));
                             }
-                        },
-//                        Rule::value => { value = sp.as_span().as_str().to_string(); },
-                        _ => ()
-                    }
-                }
-
-                let val = if value != String::default()  { Some(value) } else { None };
-                UciMessage::SetOption { name, value: val }
-
-            },
-            Rule::register => {
-                for sp in pair.into_inner() {
-                    match sp.as_rule() {
-                        Rule::register_later => {
-                            return UciMessage::register_later();
-                        },
-                        Rule::register_nc => {
-                            let mut name: &str = "";
-
-                            for spi in sp.into_inner() {
-                                match spi.as_rule() {
-                                    Rule::register_name => { name = spi.as_span().as_str(); },
-                                    Rule::register_code => {
-                                        return UciMessage::register_code(name, spi.as_str());
-                                    },
-                                    _ => ()
-                                }
-                            }
-                        },
-                        _ => unreachable!()
-                    }
-                }
-
-                unreachable!()
-            },
-            Rule::ucinewgame => {
-                UciMessage::UciNewGame
-            },
-            Rule::stop => {
-                UciMessage::Stop
-            },
-            Rule::ponderhit => {
-                UciMessage::PonderHit
-            },
-            Rule::quit => {
-                UciMessage::Quit
-            },
-            Rule::position => {
-
-                let mut startpos = false;
-                let mut fen: Option<UciFen> = None;
-                let mut moves: Vec<UciMove> = Default::default();
-
-                for sp in pair.into_inner() {
-                    match sp.as_rule() {
-                        Rule::startpos => {
-                            startpos = true;
-                        },
-                        Rule::fen => {
-                            fen = Some(UciFen::from(sp.as_span().as_str()))
-                        },
-                        Rule::a_move => {
-                            let mut from_sq = UciSquare::default();
-                            let mut to_sq = UciSquare::default();
-                            let mut promotion: Option<UciPiece> = None;
-
-                            for move_token in sp.into_inner() {
-                                match move_token.as_rule() {
-                                    Rule::from_sq => { from_sq = parse_square(move_token.into_inner().next().unwrap()); },
-                                    Rule::to_sq => { to_sq = parse_square(move_token.into_inner().next().unwrap()); },
-                                    Rule::promotion => {
-                                        promotion = Some(UciPiece::from(move_token.as_span().as_str()));
-                                    }
-                                    _ => unreachable!()
-                                }
-                            }
-
-                            let m = UciMove {
-                                from: from_sq,
-                                to: to_sq,
-                                promotion
-                            };
-
-                            moves.push(m);
+                            _ => unreachable!()
                         }
-                        _ => {}
+                    }
+                    UciMessage::Debug(false)
+                }
+                Rule::isready => UciMessage::IsReady,
+                Rule::setoption => {
+                    let mut name: String = String::default();
+                    let mut value: String = String::default();
+
+
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::option_internal => {
+                                for spi in sp.into_inner() {
+                                    match spi.as_rule() {
+                                        Rule::option_name => {
+                                            name = spi.as_span().as_str().trim().to_string();
+                                        }
+                                        Rule::option_value => {
+                                            value = spi.as_span().as_str().to_string();
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+//                        Rule::value => { value = sp.as_span().as_str().to_string(); },
+                            _ => ()
+                        }
+                    }
+
+                    let val = if value != String::default() { Some(value) } else { None };
+                    UciMessage::SetOption { name, value: val }
+                }
+                Rule::register => {
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::register_later => {
+                                return UciMessage::register_later();
+                            }
+                            Rule::register_nc => {
+                                let mut name: &str = "";
+
+                                for spi in sp.into_inner() {
+                                    match spi.as_rule() {
+                                        Rule::register_name => { name = spi.as_span().as_str(); }
+                                        Rule::register_code => {
+                                            return UciMessage::register_code(name, spi.as_str());
+                                        }
+                                        _ => ()
+                                    }
+                                }
+                            }
+                            _ => unreachable!()
+                        }
+                    }
+
+                    unreachable!()
+                }
+                Rule::ucinewgame => {
+                    UciMessage::UciNewGame
+                }
+                Rule::stop => {
+                    UciMessage::Stop
+                }
+                Rule::ponderhit => {
+                    UciMessage::PonderHit
+                }
+                Rule::quit => {
+                    UciMessage::Quit
+                }
+                Rule::position => {
+                    let mut startpos = false;
+                    let mut fen: Option<UciFen> = None;
+                    let mut moves: Vec<UciMove> = Default::default();
+
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::startpos => {
+                                startpos = true;
+                            }
+                            Rule::fen => {
+                                fen = Some(UciFen::from(sp.as_span().as_str()))
+                            }
+                            Rule::a_move => {
+                                let mut from_sq = UciSquare::default();
+                                let mut to_sq = UciSquare::default();
+                                let mut promotion: Option<UciPiece> = None;
+
+                                for move_token in sp.into_inner() {
+                                    match move_token.as_rule() {
+                                        Rule::from_sq => { from_sq = parse_square(move_token.into_inner().next().unwrap()); }
+                                        Rule::to_sq => { to_sq = parse_square(move_token.into_inner().next().unwrap()); }
+                                        Rule::promotion => {
+                                            promotion = Some(UciPiece::from(move_token.as_span().as_str()));
+                                        }
+                                        _ => unreachable!()
+                                    }
+                                }
+
+                                let m = UciMove {
+                                    from: from_sq,
+                                    to: to_sq,
+                                    promotion,
+                                };
+
+                                moves.push(m);
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    UciMessage::Position {
+                        startpos,
+                        fen,
+                        moves,
                     }
                 }
+                Rule::go => {
+                    let mut time_control: Option<UciTimeControl> = None;
+                    let mut tl = false;
+                    let mut wtime: Option<u64> = None;
+                    let mut btime: Option<u64> = None;
+                    let mut winc: Option<u64> = None;
+                    let mut binc: Option<u64> = None;
+                    let mut moves_to_go: Option<u8> = None;
 
-                UciMessage::Position {
-                    startpos,
-                    fen,
-                    moves
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::go_time => {
+                                for spi in sp.into_inner() {
+                                    println!("SPI RULE");
+                                    match spi.as_rule() {
+
+                                        Rule::go_ponder => { time_control = Some(UciTimeControl::Ponder); }
+                                        Rule::go_infinite => { time_control = Some(UciTimeControl::Infinite); }
+                                        Rule::go_movetime => { time_control = Some(UciTimeControl::from(parse_milliseconds(spi))); }
+                                        Rule::go_timeleft => {
+
+                                            if !tl {
+                                                tl = true;
+                                            }
+
+                                            for sspi in spi.into_inner() {
+                                                match sspi.as_rule() {
+                                                    Rule::wtime => { wtime = Some(parse_milliseconds(sspi)); }
+                                                    Rule::btime => { btime = Some(parse_milliseconds(sspi)); }
+                                                    Rule::winc => { winc = Some(parse_milliseconds(sspi)); }
+                                                    Rule::binc => { binc = Some(parse_milliseconds(sspi)); }
+                                                    Rule::movestogo => { moves_to_go = Some(parse_u8(sspi, Rule::digits3)); }
+                                                    _ => {}
+                                                };
+                                            }
+
+
+                                        }
+
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            Rule::go_search => {}
+                            _ => {}
+                        }
+                    }
+
+                    if tl {
+                        time_control = Some(UciTimeControl::TimeLeft {
+                            white_time: wtime,
+                            black_time: btime,
+                            white_increment: winc,
+                            black_increment: binc,
+                            moves_to_go
+                        });
+                    }
+
+                    UciMessage::Go {
+                        time_control,
+                        search_control: None,
+                    }
                 }
-            },
-            _ => unreachable!()
-        }
-    })
+                _ => unreachable!()
+            }
+        })
         .for_each(|msg| { ml.push(msg) })
     ;
 
@@ -164,23 +226,48 @@ fn parse_square(sq_pair: Pair<Rule>) -> UciSquare {
         Rule::square => {
             for sp in sq_pair.into_inner() {
                 match sp.as_rule() {
-                    Rule::file => { file = sp.as_span().as_str().chars().into_iter().next().unwrap(); },
-                    Rule::rank => { rank = str::parse(sp.as_span().as_str()).unwrap();},
+                    Rule::file => { file = sp.as_span().as_str().chars().into_iter().next().unwrap(); }
+                    Rule::rank => { rank = str::parse(sp.as_span().as_str()).unwrap(); }
                     _ => unreachable!()
                 }
             }
-        },
+        }
         _ => unreachable!()
     }
 
     UciSquare::from(file, rank)
+}
 
+fn parse_milliseconds(pair: Pair<Rule>) -> u64 {
+    for sp in pair.into_inner() {
+        match sp.as_rule() {
+            Rule::milliseconds => {
+                let au64 = str::parse::<u64>(sp.as_span().as_str()).unwrap();
+                println!("au64 {}", au64);
+                return au64;
+            }
+            _ => {}
+        }
+    }
+
+    0
+}
+
+fn parse_u8(pair: Pair<Rule>, rule: Rule) -> u8 {
+    for sp in pair.into_inner() {
+        if sp.as_rule() == rule {
+            return str::parse::<u8>(sp.as_span().as_str()).unwrap();
+        }
+    }
+
+    0
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::uci::UciMessage::Uci;
+    use crate::uci::UciTimeControl::TimeLeft;
 
     #[test]
     fn test_uci() {
@@ -220,7 +307,6 @@ mod tests {
     #[test]
     fn test_debug_cutoff() {
         parse("debug    ontario\r\n").expect_err("Should not parse");
-
     }
 
     #[test]
@@ -237,14 +323,13 @@ mod tests {
         let so = &ml[0];
 
         match so {
-            UciMessage::SetOption { name, value} => {
-
+            UciMessage::SetOption { name, value } => {
                 assert_eq!(*name, String::from("Nullmove"));
                 let val = value.clone();
                 assert_eq!(val.is_some(), true);
                 assert_eq!(val.unwrap().as_str(), String::from("true"));
                 assert_eq!(so.as_bool().unwrap(), true);
-            },
+            }
             _ => unreachable!()
         }
     }
@@ -257,15 +342,14 @@ mod tests {
         let so = &ml[0];
 
         match so {
-            UciMessage::SetOption { name, value} => {
-
+            UciMessage::SetOption { name, value } => {
                 assert_eq!(*name, String::from("Selectivity is awesome"));
                 let val = value.clone();
                 assert_eq!(val.is_some(), true);
                 assert_eq!(val.unwrap().as_str(), String::from("3"));
                 assert_eq!(so.as_bool().is_none(), true);
                 assert_eq!(so.as_i32().unwrap(), 3);
-            },
+            }
             _ => unreachable!()
         }
     }
@@ -278,12 +362,11 @@ mod tests {
         let so = &ml[0];
 
         match so {
-            UciMessage::SetOption { name, value} => {
-
+            UciMessage::SetOption { name, value } => {
                 assert_eq!(*name, String::from("Clear Hash"));
                 let val = value.clone();
                 assert_eq!(val.is_some(), false);
-            },
+            }
             _ => unreachable!()
         }
     }
@@ -295,14 +378,13 @@ mod tests {
         let so = &ml[0];
 
         match so {
-            UciMessage::SetOption { name, value} => {
-
+            UciMessage::SetOption { name, value } => {
                 assert_eq!(*name, String::from("NalimovPath"));
                 let val = value.clone();
                 assert_eq!(val.is_some(), true);
                 assert_eq!(val.unwrap().as_str(), String::from("c:\\chess\\tb\\4;c:\\chess\\tb\\5"));
                 assert_eq!(so.as_bool(), None);
-            },
+            }
             _ => unreachable!()
         }
     }
@@ -372,31 +454,31 @@ mod tests {
         let m1 = UciMove {
             from: UciSquare {
                 file: 'e',
-                rank: 2
+                rank: 2,
             },
             to: UciSquare {
                 file: 'e',
-                rank: 4
+                rank: 4,
             },
-            promotion: None
+            promotion: None,
         };
 
         let m2 = UciMove {
             from: UciSquare {
                 file: 'e',
-                rank: 7
+                rank: 7,
             },
             to: UciSquare {
                 file: 'e',
-                rank: 5
+                rank: 5,
             },
-            promotion: None
+            promotion: None,
         };
 
         let pos = UciMessage::Position {
             startpos: true,
             fen: None,
-            moves: vec![m1, m2]
+            moves: vec![m1, m2],
         };
 
         assert_eq!(ml[0], pos);
@@ -410,19 +492,19 @@ mod tests {
         let m1 = UciMove {
             from: UciSquare {
                 file: 'd',
-                rank: 2
+                rank: 2,
             },
             to: UciSquare {
                 file: 'd',
-                rank: 4
+                rank: 4,
             },
-            promotion: None
+            promotion: None,
         };
 
         let pos = UciMessage::Position {
             startpos: false,
             fen: Some(UciFen(String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"))),
-            moves: vec![m1]
+            moves: vec![m1],
         };
 
         assert_eq!(ml[0], pos);
@@ -437,31 +519,31 @@ mod tests {
         let m1 = UciMove {
             from: UciSquare {
                 file: 'g',
-                rank: 7
+                rank: 7,
             },
             to: UciSquare {
                 file: 'g',
-                rank: 8
+                rank: 8,
             },
-            promotion: Some(UciPiece::Queen)
+            promotion: Some(UciPiece::Queen),
         };
 
         let m2 = UciMove {
             from: UciSquare {
                 file: 'c',
-                rank: 4
+                rank: 4,
             },
             to: UciSquare {
                 file: 'g',
-                rank: 8
+                rank: 8,
             },
-            promotion: None
+            promotion: None,
         };
 
         let pos = UciMessage::Position {
             startpos: false,
             fen: Some(UciFen(String::from("2k5/6PR/8/8/2b4P/8/6K1/8 w - - 0 53"))),
-            moves: vec![m1, m2]
+            moves: vec![m1, m2],
         };
 
         assert_eq!(ml[0], pos);
@@ -481,7 +563,7 @@ mod tests {
         let pos = UciMessage::Position {
             startpos: true,
             fen: None,
-            moves: vec![]
+            moves: vec![],
         };
 
         assert_eq!(ml[0], pos);
@@ -491,13 +573,56 @@ mod tests {
     fn test_position_fen_no_moves() {
         let ml = parse("position    fen 2k5/6PR/8/8/2b4P/8/6K1/8 w   - - 0 53\r\n").unwrap();
         assert_eq!(ml.len(), 1);
-        
+
         let pos = UciMessage::Position {
             startpos: false,
             fen: Some(UciFen(String::from("2k5/6PR/8/8/2b4P/8/6K1/8 w   - - 0 53"))),
-            moves: vec![]
+            moves: vec![],
         };
 
         assert_eq!(ml[0], pos);
+    }
+
+    #[test]
+    fn test_go_ponder() {
+        let ml = parse("go ponder\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+        assert_eq!(ml[0], UciMessage::go_ponder());
+    }
+
+    #[test]
+    fn test_go_infinite() {
+        let ml = parse("go infinite\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+        assert_eq!(ml[0], UciMessage::go_infinite());
+    }
+
+    #[test]
+    fn test_go_movetime() {
+        let ml = parse("go movetime  55055\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+        assert_eq!(ml[0], UciMessage::go_movetime(55055));
+    }
+
+    #[test]
+    fn test_go_timeleft() {
+        let ml = parse("go wtime 903000 btime 770908 winc 15000 movestogo 17 binc 10000\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+        let tl = UciTimeControl::TimeLeft {
+            white_time: Some(903000),
+            black_time: Some(770908),
+            white_increment: Some(15000),
+            black_increment: Some(10000),
+            moves_to_go: Some(17),
+        };
+
+        assert_eq!(ml[0], UciMessage::Go {
+            search_control: None,
+            time_control: Some(tl),
+        });
     }
 }

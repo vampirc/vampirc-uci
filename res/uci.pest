@@ -2,7 +2,8 @@ WHITESPACE = _{ " " | "\t" }
 
 commands = _{ SOI ~ ws_nl* ~ message+ ~ ws_nl*}
 
-message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit | position) ~ WHITESPACE*  ~ NEWLINE+}
+message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit |
+            position | go) ~ WHITESPACE*  ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
 
@@ -55,9 +56,32 @@ fen_none = { "-" }
 castling_chars = { ^"k" | ^"q" }
 castling = { castling_chars{1,4} | fen_none }
 en_passant = { square | fen_none }
-counter = _{ ('0'..'9'){1,4} }
+counter = _{ digit{1,4} }
 ply_clock = { counter }
 move_num = { counter }
+
+// GO
+go = ${ ^"go" ~ (WHITESPACE+ | go_time | go_search)+ }
+go_time = { go_ponder | go_infinite | go_movetime | go_timeleft }
+go_ponder = ${ ^"ponder" ~ !non_ws }
+go_infinite = ${ ^"infinite" ~ !non_ws }
+go_movetime = ${ ^"movetime" ~ WHITESPACE+ ~ milliseconds }
+go_timeleft = { (wtime | btime | winc | binc | movestogo)+ }
+wtime = ${ ^"wtime" ~ WHITESPACE+ ~ milliseconds}
+btime = ${ ^"btime" ~ WHITESPACE+ ~ milliseconds}
+winc = ${ ^"winc" ~ WHITESPACE+ ~ milliseconds}
+binc = ${ ^"binc" ~ WHITESPACE+ ~ milliseconds}
+movestogo = ${ ^"movestogo" ~ WHITESPACE+ ~ digits3}
+go_search = { depth | nodes | mate | searchmoves }
+depth = ${ ^"depth" ~WHITESPACE+ ~ digits3 }
+nodes = ${ ^"nodes" ~WHITESPACE+ ~ digits12 }
+mate = ${ ^"mate" ~WHITESPACE+ ~ digits3 }
+searchmoves = ${ ^"searchmoves" ~ (WHITESPACE+ ~ a_move)+ }
+
+milliseconds = { digit{1,12} }
+digits3 = { digit{1,3} }
+digits12 = { digit{1,12} }
+
 
 
 token = @{ (!(WHITESPACE | NEWLINE) ~ ANY)+ }

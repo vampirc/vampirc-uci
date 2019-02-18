@@ -3,6 +3,8 @@ use std::fmt::{Display, Result as FmtResult, Formatter};
 use crate::parser::parse;
 use std::str::FromStr;
 use std::error::Error;
+use crate::uci::UciTimeControl::MoveTime;
+use crate::uci::UciTimeControl::TimeLeft;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum CommunicationDirection {
@@ -27,7 +29,7 @@ pub enum UciMessage {
     },
     SetOption {
         name: String,
-        value: Option<String>
+        value: Option<String>,
     },
     UciNewGame,
     Stop,
@@ -35,17 +37,16 @@ pub enum UciMessage {
     Quit,
     Go {
         time_control: Option<UciTimeControl>,
-        search_control: Option<UciSearchControl>
-    }
+        search_control: Option<UciSearchControl>,
+    },
 }
 
 impl UciMessage {
-
     pub fn register_later() -> UciMessage {
         UciMessage::Register {
             later: true,
             name: None,
-            code: None
+            code: None,
         }
     }
 
@@ -53,7 +54,28 @@ impl UciMessage {
         UciMessage::Register {
             later: false,
             name: Some(name.to_string()),
-            code: Some(code.to_string())
+            code: Some(code.to_string()),
+        }
+    }
+
+    pub fn go_ponder() -> UciMessage {
+        UciMessage::Go {
+            search_control: None,
+            time_control: Some(UciTimeControl::Ponder)
+        }
+    }
+
+    pub fn go_infinite() -> UciMessage {
+        UciMessage::Go {
+            search_control: None,
+            time_control: Some(UciTimeControl::Infinite)
+        }
+    }
+
+    pub fn go_movetime(milliseconds: u64) -> UciMessage {
+        UciMessage::Go {
+            search_control: None,
+            time_control: Some(UciTimeControl::from(milliseconds))
         }
     }
 
@@ -99,8 +121,8 @@ impl UciMessage {
                 }
 
                 s
-            },
-            UciMessage::SetOption {name, value} => {
+            }
+            UciMessage::SetOption { name, value } => {
                 let mut s: String = String::from(format!("setoption name {}", name));
 
                 if let Some(val) = value {
@@ -108,20 +130,25 @@ impl UciMessage {
                 }
 
                 s
-            },
-            UciMessage::Go { time_control, search_control} => {
+            }
+            UciMessage::Go { time_control, search_control } => {
                 let mut s = String::from("go ");
 
                 if let Some(tc) = time_control {
                     match tc {
-                        UciTimeControl::Infinite => { s += "infinite "; },
-                        UciTimeControl::Ponder => { s += "ponder "; },
-                        UciTimeControl::MoveTime { milliseconds} => {
+                        UciTimeControl::Infinite => { s += "infinite "; }
+                        UciTimeControl::Ponder => { s += "ponder "; }
+                        UciTimeControl::MoveTime { milliseconds } => {
                             s += format!("movetime {} ", *milliseconds).as_str();
-                        },
-                        UciTimeControl::TimeLeft { white_time, black_time, white_increment, black_increment, moves_to_go    } => {
-                            s += format!("wtime {} ", *white_time).as_str();
-                            s += format!("btime {} ", *black_time).as_str();
+                        }
+                        UciTimeControl::TimeLeft { white_time, black_time, white_increment, black_increment, moves_to_go } => {
+                            if let Some(wt) = white_time {
+                                s += format!("wtime {} ", *wt).as_str();
+                            }
+
+                            if let Some(bt) = black_time {
+                                s += format!("bt {} ", *bt).as_str();
+                            }
 
                             if let Some(wi) = white_increment {
                                 s += format!("winc {} ", *wi).as_str();
@@ -161,7 +188,7 @@ impl UciMessage {
                 }
 
                 s
-            },
+            }
             UciMessage::Uci => "uci".to_string(),
             UciMessage::IsReady => "isready".to_string(),
             UciMessage::UciNewGame => "ucinewgame".to_string(),
@@ -199,7 +226,7 @@ impl UciMessage {
                 }
 
                 None
-            },
+            }
             _ => None
         }
     }
@@ -215,7 +242,7 @@ impl UciMessage {
                 }
 
                 None
-            },
+            }
             _ => None
         }
     }
@@ -232,14 +259,34 @@ pub enum UciTimeControl {
     Ponder,
     Infinite,
     TimeLeft {
-        white_time: u64,
-        black_time: u64,
+        white_time: Option<u64>,
+        black_time: Option<u64>,
         white_increment: Option<u64>,
         black_increment: Option<u64>,
-        moves_to_go: Option<u8>
+        moves_to_go: Option<u8>,
     },
     MoveTime {
         milliseconds: u64
+    },
+}
+
+impl UciTimeControl {
+    pub fn time_left() -> UciTimeControl {
+        TimeLeft {
+            white_time: None,
+            black_time: None,
+            white_increment: None,
+            black_increment: None,
+            moves_to_go: None
+        }
+    }
+}
+
+impl From<u64> for UciTimeControl {
+    fn from(milliseconds: u64) -> Self {
+        UciTimeControl::MoveTime {
+            milliseconds
+        }
     }
 }
 
@@ -248,7 +295,7 @@ pub struct UciSearchControl {
     search_moves: Vec<UciMove>,
     mate: Option<u8>,
     depth: Option<u8>,
-    nodes: Option<u64>
+    nodes: Option<u64>,
 }
 
 //
@@ -364,7 +411,6 @@ impl UciPiece {
 
 impl From<&str> for UciPiece {
     fn from(s: &str) -> Self {
-
         match s.to_ascii_lowercase().as_str() {
             "n" => UciPiece::Knight,
             "p" => UciPiece::Pawn,
@@ -384,11 +430,10 @@ pub struct UciSquare {
 }
 
 impl UciSquare {
-
     pub fn from(file: char, rank: u8) -> UciSquare {
         UciSquare {
             file,
-            rank
+            rank,
         }
     }
 }
@@ -403,7 +448,7 @@ impl Default for UciSquare {
     fn default() -> Self {
         UciSquare {
             file: '\0',
-            rank: 0
+            rank: 0,
         }
     }
 }
