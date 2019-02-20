@@ -1,5 +1,9 @@
+//! The `uci` module contains the definitions that represent UCI protocol messages. Usually, these messages will be
+//! obtained by calling the `parse` method of the `parser` module, but you can always construct them in code and then
+//! print them to the standard output to communicate with the engine or GUI.
+
+
 use std::error::Error;
-//pub type Arguments = &Vec<&Argument>;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
@@ -7,42 +11,88 @@ use crate::parser::parse;
 use crate::uci::UciTimeControl::MoveTime;
 use crate::uci::UciTimeControl::TimeLeft;
 
+/// Specifies whether a message is engine- or GUI-bound.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum CommunicationDirection {
+    /// An engine-bound message.
     GuiToEngine,
+
+    /// A GUI-bound message
     EngineToGui,
 }
 
+/// An enumeration type containing representations for all messages supported by the UCI protocol.
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum UciMessage {
+    /// The `uci` engine-bound message.
     Uci,
+
+    /// The `debug` engine-bound message. Its internal property specifies whether debug mode should be enabled (`true`),
+    /// or disabled (`false`).
     Debug(bool),
+
+    /// The `isready` engine-bound message.
     IsReady,
+
+    /// The `register` engine-bound message.
     Register {
+        /// The `register later` engine-bound message.
         later: bool,
+
+        /// The name part of the `register <code> <name>` engine-bound message.
         name: Option<String>,
+
+        /// The code part of the `register <code> <name>` engine-bound message.
         code: Option<String>,
     },
+
+    /// The `position` engine-bound message.
     Position {
+        /// If `true`, it denotes the starting chess position. Generally, if this property is `true`, then the value of
+        /// the `fen` property will be `None`.
         startpos: bool,
+
+        /// The [FEN format](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation) representation of a chess
+        /// position.
         fen: Option<UciFen>,
+
+        /// A list of moves to apply to the position.
         moves: Vec<UciMove>,
     },
+
+    /// The `setoption` engine-bound message.
     SetOption {
+        /// The name of the option to set.
         name: String,
+
+        /// The value of the option to set. If the option has no value, this should be `None`.
         value: Option<String>,
     },
+
+    /// The `ucinewgame` engine-bound message.
     UciNewGame,
+
+    /// The `stop` engine-bound message.
     Stop,
+
+    /// The `ponderhit` engine-bound message.
     PonderHit,
+
+    /// The `quit` engine-bound message.
     Quit,
+
+    /// The `go` engine-bound message.
     Go {
+        /// Time-control-related `go` parameters (sub-commands).
         time_control: Option<UciTimeControl>,
+
+        /// Search-related `go` parameters (sub-commands).
         search_control: Option<UciSearchControl>,
     },
 }
 
 impl UciMessage {
+    /// Construct `register later` a [UciMessage::Register](enum.UciMessage.html#variant.Register)  message.
     pub fn register_later() -> UciMessage {
         UciMessage::Register {
             later: true,
@@ -51,6 +101,7 @@ impl UciMessage {
         }
     }
 
+    /// Construct a `register <code> <name>` [UciMessage::Register](enum.UciMessage.html#variant.Register) message.
     pub fn register_code(name: &str, code: &str) -> UciMessage {
         UciMessage::Register {
             later: false,
@@ -59,6 +110,7 @@ impl UciMessage {
         }
     }
 
+    /// Construct a `go ponder` [UciMessage::Register](enum.UciMessage.html#variant.Go) message.
     pub fn go_ponder() -> UciMessage {
         UciMessage::Go {
             search_control: None,
@@ -66,6 +118,7 @@ impl UciMessage {
         }
     }
 
+    /// Construct a `go infinite` [UciMessage::Register](enum.UciMessage.html#variant.Go) message.
     pub fn go_infinite() -> UciMessage {
         UciMessage::Go {
             search_control: None,
@@ -73,6 +126,8 @@ impl UciMessage {
         }
     }
 
+    /// Construct a `go movetime <milliseconds>` [UciMessage::Register](enum.UciMessage.html#variant.Go) message, with
+    /// `milliseconds` as the argument.
     pub fn go_movetime(milliseconds: u64) -> UciMessage {
         UciMessage::Go {
             search_control: None,
@@ -80,7 +135,14 @@ impl UciMessage {
         }
     }
 
-    fn serialize(&self) -> String {
+    /// Serializes the command into a String.
+    /// # Examples
+    /// ```
+    /// use vampirc_uci::uci::UciMessage;
+    ///
+    /// println!("{}", UciMessage::Uci.serialize()); // Should print `uci`.
+    /// ```
+    pub fn serialize(&self) -> String {
         match self {
             UciMessage::Debug(on) => if *on { String::from("debug on") } else { String::from("debug off") },
             UciMessage::Register { later, name, code } => {
