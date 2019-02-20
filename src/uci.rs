@@ -1,8 +1,9 @@
-//pub type Arguments = &Vec<&Argument>;
-use std::fmt::{Display, Result as FmtResult, Formatter};
-use crate::parser::parse;
-use std::str::FromStr;
 use std::error::Error;
+//pub type Arguments = &Vec<&Argument>;
+use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::str::FromStr;
+
+use crate::parser::parse;
 use crate::uci::UciTimeControl::MoveTime;
 use crate::uci::UciTimeControl::TimeLeft;
 
@@ -292,10 +293,54 @@ impl From<u64> for UciTimeControl {
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciSearchControl {
-    search_moves: Vec<UciMove>,
-    mate: Option<u8>,
-    depth: Option<u8>,
-    nodes: Option<u64>,
+    pub search_moves: Vec<UciMove>,
+    pub mate: Option<u8>,
+    pub depth: Option<u8>,
+    pub nodes: Option<u64>,
+}
+
+impl UciSearchControl {
+    pub fn depth(depth: u8) -> UciSearchControl {
+        UciSearchControl {
+            search_moves: vec![],
+            mate: None,
+            depth: Some(depth),
+            nodes: None,
+        }
+    }
+
+    pub fn mate(mate: u8) -> UciSearchControl {
+        UciSearchControl {
+            search_moves: vec![],
+            mate: Some(mate),
+            depth: None,
+            nodes: None,
+        }
+    }
+
+    pub fn nodes(nodes: u64) -> UciSearchControl {
+        UciSearchControl {
+            search_moves: vec![],
+            mate: None,
+            depth: None,
+            nodes: Some(nodes),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.search_moves.is_empty() && self.mate.is_none() && self.depth.is_none() && self.nodes.is_none()
+    }
+}
+
+impl Default for UciSearchControl {
+    fn default() -> Self {
+        UciSearchControl {
+            search_moves: vec![],
+            mate: None,
+            depth: None,
+            nodes: None,
+        }
+    }
 }
 
 //
@@ -458,6 +503,16 @@ pub struct UciMove {
     pub from: UciSquare,
     pub to: UciSquare,
     pub promotion: Option<UciPiece>,
+}
+
+impl UciMove {
+    pub fn from_to(from: UciSquare, to: UciSquare) -> UciMove {
+        UciMove {
+            from,
+            to,
+            promotion: None,
+        }
+    }
 }
 
 impl Display for UciMove {

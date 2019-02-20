@@ -1,11 +1,11 @@
 //use std::error::Result;
 
 
-use pest::Parser;
-use pest::iterators::Pair;
 use pest::error::Error;
+use pest::iterators::Pair;
+use pest::Parser;
 
-use crate::uci::{UciMessage, MessageList, UciFen, UciMove, UciSquare, UciPiece, UciTimeControl, UciSearchControl};
+use crate::uci::{MessageList, UciFen, UciMessage, UciMove, UciPiece, UciSearchControl, UciSquare, UciTimeControl};
 use crate::uci::UciMessage::Uci;
 
 #[derive(Parser)]
@@ -112,28 +112,7 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                                 fen = Some(UciFen::from(sp.as_span().as_str()))
                             }
                             Rule::a_move => {
-                                let mut from_sq = UciSquare::default();
-                                let mut to_sq = UciSquare::default();
-                                let mut promotion: Option<UciPiece> = None;
-
-                                for move_token in sp.into_inner() {
-                                    match move_token.as_rule() {
-                                        Rule::from_sq => { from_sq = parse_square(move_token.into_inner().next().unwrap()); }
-                                        Rule::to_sq => { to_sq = parse_square(move_token.into_inner().next().unwrap()); }
-                                        Rule::promotion => {
-                                            promotion = Some(UciPiece::from(move_token.as_span().as_str()));
-                                        }
-                                        _ => unreachable!()
-                                    }
-                                }
-
-                                let m = UciMove {
-                                    from: from_sq,
-                                    to: to_sq,
-                                    promotion,
-                                };
-
-                                moves.push(m);
+                                moves.push(parse_a_move(sp));
                             }
                             _ => {}
                         }
@@ -153,6 +132,8 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                     let mut winc: Option<u64> = None;
                     let mut binc: Option<u64> = None;
                     let mut moves_to_go: Option<u8> = None;
+
+                    let mut search: UciSearchControl = UciSearchControl::default();
 
                     for sp in pair.into_inner() {
                         match sp.as_rule() {
@@ -188,7 +169,27 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                                     }
                                 }
                             }
-                            Rule::go_search => {}
+                            Rule::go_search => {
+                                for spi in sp.into_inner() {
+                                    match spi.as_rule() {
+                                        Rule::depth => {
+                                            search.depth = Some(parse_u8(spi, Rule::digits3));
+                                        },
+                                        Rule::mate => {
+                                            search.mate = Some(parse_u8(spi, Rule::digits3))
+                                        }
+                                        Rule::nodes => {
+                                            search.nodes = Some(parse_u64(spi, Rule::digits12))
+                                        },
+                                        Rule::searchmoves => {
+                                            for mt in spi.into_inner() {
+                                                search.search_moves.push(parse_a_move(mt));
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
                             _ => {}
                         }
                     }
@@ -203,9 +204,16 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                         });
                     }
 
+                    let search_control: Option<UciSearchControl>;
+                    if search.is_empty() {
+                        search_control = None
+                    } else {
+                        search_control = Some(search);
+                    }
+
                     UciMessage::Go {
                         time_control,
-                        search_control: None,
+                        search_control
                     }
                 }
                 _ => unreachable!()
@@ -242,9 +250,7 @@ fn parse_milliseconds(pair: Pair<Rule>) -> u64 {
     for sp in pair.into_inner() {
         match sp.as_rule() {
             Rule::milliseconds => {
-                let au64 = str::parse::<u64>(sp.as_span().as_str()).unwrap();
-                println!("au64 {}", au64);
-                return au64;
+                return str::parse::<u64>(sp.as_span().as_str()).unwrap();
             }
             _ => {}
         }
@@ -263,11 +269,46 @@ fn parse_u8(pair: Pair<Rule>, rule: Rule) -> u8 {
     0
 }
 
+fn parse_u64(pair: Pair<Rule>, rule: Rule) -> u64 {
+    for sp in pair.into_inner() {
+        if sp.as_rule() == rule {
+            return str::parse::<u64>(sp.as_span().as_str()).unwrap();
+        }
+    }
+
+    0
+}
+
+fn parse_a_move(sp: Pair<Rule>) -> UciMove {
+    let mut from_sq = UciSquare::default();
+    let mut to_sq = UciSquare::default();
+    let mut promotion: Option<UciPiece> = None;
+
+    for move_token in sp.into_inner() {
+        match move_token.as_rule() {
+            Rule::from_sq => { from_sq = parse_square(move_token.into_inner().next().unwrap()); }
+            Rule::to_sq => { to_sq = parse_square(move_token.into_inner().next().unwrap()); }
+            Rule::promotion => {
+                promotion = Some(UciPiece::from(move_token.as_span().as_str()));
+            }
+            _ => unreachable!()
+        }
+    }
+
+    UciMove {
+        from: from_sq,
+        to: to_sq,
+        promotion,
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::uci::UciMessage::Uci;
+    use crate::uci::UciMessage::UciNewGame;
     use crate::uci::UciTimeControl::TimeLeft;
+
+    use super::*;
 
     #[test]
     fn test_uci() {
@@ -624,5 +665,83 @@ mod tests {
             search_control: None,
             time_control: Some(tl),
         });
+    }
+
+    #[test]
+    fn test_search_control_depth() {
+        let ml = parse("go ponder depth 6\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+        let result = UciMessage::Go {
+            time_control: Some(UciTimeControl::Ponder),
+            search_control: Some(UciSearchControl::depth(6)),
+        };
+
+        assert_eq!(ml[0], result);
+    }
+
+    #[test]
+    fn test_search_control_mate() {
+        let ml = parse("go mate 12\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+        let result = UciMessage::Go {
+            time_control: None,
+            search_control: Some(UciSearchControl::mate(12)),
+        };
+
+        assert_eq!(ml[0], result);
+    }
+
+    #[test]
+    fn test_nodes_searchmoves() {
+        let ml = parse("go nodes 79093455456 searchmoves e2e4 d2d4 g2g1n\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+        let sc = UciSearchControl {
+            depth: None,
+            nodes: Some(79093455456),
+            mate: None,
+            search_moves: vec![
+                UciMove::from_to(UciSquare::from('e', 2), UciSquare::from('e', 4)),
+                UciMove::from_to(UciSquare::from('d', 2), UciSquare::from('d', 4)),
+                UciMove {
+                    from: UciSquare::from('g', 2),
+                    to: UciSquare::from('g', 1),
+                    promotion: Some(UciPiece::Knight),
+                }
+            ],
+        };
+
+        let result = UciMessage::Go {
+            time_control: None,
+            search_control: Some(sc),
+        };
+
+        assert_eq!(ml[0], result);
+    }
+
+    #[test]
+    fn test_go_full_example() {
+        let ml = parse("go movetime 10000 searchmoves a1h8 depth 6 nodes 55000000\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+        let tc = UciTimeControl::MoveTime { milliseconds: 10000 };
+
+        let sc = UciSearchControl {
+            depth: Some(6),
+            nodes: Some(55000000),
+            mate: None,
+            search_moves: vec![
+                UciMove::from_to(UciSquare::from('a', 1), UciSquare::from('h', 8)),
+            ],
+        };
+
+        let result = UciMessage::Go {
+            time_control: Some(tc),
+            search_control: Some(sc),
+        };
+
+        assert_eq!(ml[0], result);
     }
 }
