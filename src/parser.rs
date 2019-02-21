@@ -144,7 +144,7 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
 
                                         Rule::go_ponder => { time_control = Some(UciTimeControl::Ponder); }
                                         Rule::go_infinite => { time_control = Some(UciTimeControl::Infinite); }
-                                        Rule::go_movetime => { time_control = Some(UciTimeControl::from(parse_milliseconds(spi))); }
+                                        Rule::go_movetime => { time_control = Some(UciTimeControl::MoveTime(parse_milliseconds(spi))); }
                                         Rule::go_timeleft => {
 
                                             if !tl {
@@ -726,7 +726,7 @@ mod tests {
         let ml = parse("go movetime 10000 searchmoves a1h8 depth 6 nodes 55000000\n").unwrap();
         assert_eq!(ml.len(), 1);
 
-        let tc = UciTimeControl::MoveTime { milliseconds: 10000 };
+        let tc = UciTimeControl::MoveTime(10000);
 
         let sc = UciSearchControl {
             depth: Some(6),

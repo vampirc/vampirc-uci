@@ -5,9 +5,7 @@
 
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::str::FromStr;
 
-use crate::parser::parse;
 use crate::uci::UciTimeControl::MoveTime;
 use crate::uci::UciTimeControl::TimeLeft;
 
@@ -92,6 +90,7 @@ pub enum UciMessage {
 }
 
 impl UciMessage {
+
     /// Construct `register later` a [UciMessage::Register](enum.UciMessage.html#variant.Register)  message.
     pub fn register_later() -> UciMessage {
         UciMessage::Register {
@@ -131,7 +130,7 @@ impl UciMessage {
     pub fn go_movetime(milliseconds: u64) -> UciMessage {
         UciMessage::Go {
             search_control: None,
-            time_control: Some(UciTimeControl::from(milliseconds))
+            time_control: Some(UciTimeControl::MoveTime(milliseconds))
         }
     }
 
@@ -202,7 +201,7 @@ impl UciMessage {
                     match tc {
                         UciTimeControl::Infinite => { s += "infinite "; }
                         UciTimeControl::Ponder => { s += "ponder "; }
-                        UciTimeControl::MoveTime { milliseconds } => {
+                        UciTimeControl::MoveTime(milliseconds) => {
                             s += format!("movetime {} ", *milliseconds).as_str();
                         }
                         UciTimeControl::TimeLeft { white_time, black_time, white_increment, black_increment, moves_to_go } => {
@@ -262,6 +261,7 @@ impl UciMessage {
         }
     }
 
+    /// Returns whether the command was meant for the engine or for the GUI.
     fn direction(&self) -> CommunicationDirection {
         match self {
             UciMessage::Uci |
@@ -279,6 +279,8 @@ impl UciMessage {
         }
     }
 
+    /// If this `UciMessage` is a `UciMessage::SetOption` and the value of that option is a `bool`, this method returns
+    /// the `bool` value, otherwise it returns `None`.
     pub fn as_bool(&self) -> Option<bool> {
         match self {
             UciMessage::SetOption { value, .. } => {
@@ -295,6 +297,8 @@ impl UciMessage {
         }
     }
 
+    /// If this `UciMessage` is a `UciMessage::SetOption` and the value of that option is an integer, this method
+    /// returns the `i32` value of the integer, otherwise it returns `None`.
     pub fn as_i32(&self) -> Option<i32> {
         match self {
             UciMessage::SetOption { value, .. } => {
@@ -318,23 +322,40 @@ impl Display for UciMessage {
     }
 }
 
+/// This enum represents the possible variants of the `go` UCI message that deal with the chess game's time controls
+/// and the engine's thinking time.
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum UciTimeControl {
+    /// The `go ponder` message.
     Ponder,
+
+    /// The `go infinite` message.
     Infinite,
+
+    /// The information about the game's time controls.
     TimeLeft {
+        /// White's time on the clock, in milliseconds.
         white_time: Option<u64>,
+
+        /// Black's time on the clock, in milliseconds.
         black_time: Option<u64>,
+
+        /// White's increment per move, in milliseconds.
         white_increment: Option<u64>,
+
+        /// Black's increment per move, in milliseconds.
         black_increment: Option<u64>,
+
+        /// The number of moves to go to the next time control.
         moves_to_go: Option<u8>,
     },
-    MoveTime {
-        milliseconds: u64
-    },
+
+    /// Specifies how much time the engine should think about the move, in milliseconds.
+    MoveTime(u64)
 }
 
 impl UciTimeControl {
+    /// Returns a `UciTimeControl::TimeLeft` with all members set to `None`.
     pub fn time_left() -> UciTimeControl {
         TimeLeft {
             white_time: None,
@@ -346,23 +367,24 @@ impl UciTimeControl {
     }
 }
 
-impl From<u64> for UciTimeControl {
-    fn from(milliseconds: u64) -> Self {
-        UciTimeControl::MoveTime {
-            milliseconds
-        }
-    }
-}
-
+/// A struct that controls the engine's (non-time-related) search settings.
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciSearchControl {
+    /// Limits the search to these moves.
     pub search_moves: Vec<UciMove>,
+
+    /// Search for mate in this many moves.
     pub mate: Option<u8>,
+
+    /// Search to this ply depth.
     pub depth: Option<u8>,
+
+    /// Search no more than this many nodes (positions).
     pub nodes: Option<u64>,
 }
 
 impl UciSearchControl {
+    /// Creates an `UciSearchControl` with `depth` set to the parameter and everything else set to empty or `None`.
     pub fn depth(depth: u8) -> UciSearchControl {
         UciSearchControl {
             search_moves: vec![],
@@ -372,6 +394,7 @@ impl UciSearchControl {
         }
     }
 
+    /// Creates an `UciSearchControl` with `mate` set to the parameter and everything else set to empty or `None`.
     pub fn mate(mate: u8) -> UciSearchControl {
         UciSearchControl {
             search_moves: vec![],
@@ -381,6 +404,7 @@ impl UciSearchControl {
         }
     }
 
+    /// Creates an `UciSearchControl` with `nodes` set to the parameter and everything else set to empty or `None`.
     pub fn nodes(nodes: u64) -> UciSearchControl {
         UciSearchControl {
             search_moves: vec![],
@@ -390,12 +414,14 @@ impl UciSearchControl {
         }
     }
 
+    /// Returns `true` if all of the struct's settings are either `None` or empty.
     pub fn is_empty(&self) -> bool {
         self.search_moves.is_empty() && self.mate.is_none() && self.depth.is_none() && self.nodes.is_none()
     }
 }
 
 impl Default for UciSearchControl {
+    /// Creates an empty `UciSearchControl`.
     fn default() -> Self {
         UciSearchControl {
             search_moves: vec![],
