@@ -520,6 +520,7 @@ impl Display for OptionType {
 //    }
 //}
 
+/// An enum representing the chess piece types.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum UciPiece {
     Pawn,
@@ -531,6 +532,14 @@ pub enum UciPiece {
 }
 
 impl UciPiece {
+    /// Returns a character representing a piece in UCI move notation. Used for specifying promotion in moves.
+    ///
+    /// `n` – knight
+    /// `b` - bishop
+    /// `r` - rook
+    /// `q` - queen
+    /// `k` - king
+    /// `None` - pawn
     pub fn as_char(self) -> Option<char> {
         match self {
             UciPiece::Pawn => None,
@@ -544,6 +553,16 @@ impl UciPiece {
 }
 
 impl From<&str> for UciPiece {
+    /// Creates a `UciPiece` from a `&str`, according to these rules:
+    ///
+    /// `"n"` - Knight
+    /// `"p"` - Pawn
+    /// `"b"` - Bishop
+    /// `"r"` - Rook
+    /// `"k"` - King
+    /// `"q"` - Queen
+    ///
+    /// Works with uppercase letters as well.
     fn from(s: &str) -> Self {
         match s.to_ascii_lowercase().as_str() {
             "n" => UciPiece::Knight,
@@ -557,13 +576,18 @@ impl From<&str> for UciPiece {
     }
 }
 
+/// A representation of a chessboard square.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciSquare {
+    /// The file. A character in the range of `a..h`.
     pub file: char,
+
+    /// The rank. A number in the range of `1..8`.
     pub rank: u8,
 }
 
 impl UciSquare {
+    /// Create a `UciSquare` from file character and a rank number.
     pub fn from(file: char, rank: u8) -> UciSquare {
         UciSquare {
             file,
@@ -573,12 +597,14 @@ impl UciSquare {
 }
 
 impl Display for UciSquare {
+    /// Formats the square in the regular notation (as in, `e4`).
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}{}", self.file, self.rank)
     }
 }
 
 impl Default for UciSquare {
+    /// Default square is an invalid square with a file of `\0` and the rank of `0`.
     fn default() -> Self {
         UciSquare {
             file: '\0',
@@ -587,14 +613,21 @@ impl Default for UciSquare {
     }
 }
 
+/// Representation of a chess move.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciMove {
+    /// The source square.
     pub from: UciSquare,
+
+    /// The destination square.
     pub to: UciSquare,
+
+    /// The piece to be promoted to, if any.
     pub promotion: Option<UciPiece>,
 }
 
 impl UciMove {
+    /// Create a regular, non-promotion move from the `from` square to the `to` square.
     pub fn from_to(from: UciSquare, to: UciSquare) -> UciMove {
         UciMove {
             from,
@@ -605,6 +638,10 @@ impl UciMove {
 }
 
 impl Display for UciMove {
+    /// Formats the move in the UCI move notation.
+    ///
+    /// `e2e4` – A move from the square `e2` to the square `e4`.
+    /// `a2a1q` – A move from the square `a2` to the square `a1` with the pawn promoting to a Queen..
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         let mut r = write!(f, "{}{}", self.from, self.to);
 
@@ -619,18 +656,24 @@ impl Display for UciMove {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
+/// A representation of the notation in the [FEN notation](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation).
 pub struct UciFen(pub String);
 
 impl UciFen {
+    /// Returns the FEN string.
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
 }
 
 impl From<&str> for UciFen {
+    /// Constructs an UciFen object from a `&str` containing a [FEN](https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation)
+    /// position. Does not validate the FEN.
     fn from(s: &str) -> Self {
         UciFen(s.to_string())
     }
 }
 
+
+/// A vector containing several `UciMessage`s.
 pub type MessageList = Vec<UciMessage>;
