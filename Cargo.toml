@@ -1,6 +1,11 @@
 [package]
 name = "vampirc-uci"
-version = "0.1.0"
+version = "0.4.0"
+description = "A Universal Chess Interface (UCI) protocol parser and serializer."
+documentation = "https://docs.rs/vampirc_uci"
+license = "MIT"
+readme = "README.md"
+keywords = ["uci", "chess", "parser"]
 authors = ["Matija Kejžar <matija@kejzar.si>"]
 edition = "2018"
 

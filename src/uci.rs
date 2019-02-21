@@ -136,6 +136,7 @@ impl UciMessage {
     }
 
     /// Serializes the command into a String.
+    ///
     /// # Examples
     /// ```
     /// use vampirc_uci::uci::UciMessage;
