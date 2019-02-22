@@ -26,16 +26,24 @@ struct UciParser;
 ///
 /// ```
 /// use vampirc_uci::UciMessage;
-/// use vampirc_uci::parse;
+/// use vampirc_uci::parse_strict;
 ///
-/// let messages = parse("position startpos\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
+/// let messages = parse_strict("position startpos\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
 /// assert_eq!(messages.len(), 2);
 ///
 /// ```
-pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
+pub fn parse_strict(s: &str) -> Result<MessageList, Error<Rule>> {
+    do_parse_uci(s, Rule::commands)
+}
+
+pub fn parse(s: &str) -> MessageList {
+    do_parse_uci(s, Rule::commands_ignore_unknown).unwrap()
+}
+
+fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
     let mut ml = MessageList::default();
 
-    let pairs = UciParser::parse(Rule::commands, s)?;
+    let pairs = UciParser::parse(top_rule, s)?;
 
     pairs
         .map(|pair: Pair<_>| {
@@ -161,12 +169,10 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                                 for spi in sp.into_inner() {
                                     println!("SPI RULE");
                                     match spi.as_rule() {
-
                                         Rule::go_ponder => { time_control = Some(UciTimeControl::Ponder); }
                                         Rule::go_infinite => { time_control = Some(UciTimeControl::Infinite); }
                                         Rule::go_movetime => { time_control = Some(UciTimeControl::MoveTime(parse_milliseconds(spi))); }
                                         Rule::go_timeleft => {
-
                                             if !tl {
                                                 tl = true;
                                             }
@@ -181,8 +187,6 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                                                     _ => {}
                                                 };
                                             }
-
-
                                         }
 
                                         _ => {}
@@ -220,7 +224,7 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
                             black_time: btime,
                             white_increment: winc,
                             black_increment: binc,
-                            moves_to_go
+                            moves_to_go,
                         });
                     }
 
@@ -233,7 +237,7 @@ pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
 
                     UciMessage::Go {
                         time_control,
-                        search_control
+                        search_control,
                     }
                 }
                 _ => unreachable!()
@@ -332,7 +336,7 @@ mod tests {
 
     #[test]
     fn test_uci() {
-        let ml = parse("uci\r\nuci\r\n").unwrap();
+        let ml = parse_strict("uci\r\nuci\r\n").unwrap();
         assert_eq!(ml.len(), 2);
         for mb in ml {
             //let mbb = &(*mb);
@@ -342,44 +346,44 @@ mod tests {
 
     #[test]
     fn test_debug_on() {
-        let ml = parse("debug    on\r\n").unwrap();
+        let ml = parse_strict("debug    on\r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::Debug(true));
     }
 
     #[test]
     fn test_debug_off() {
-        let ml = parse("debug off\n").unwrap();
+        let ml = parse_strict("debug off\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::Debug(false));
     }
 
     #[test]
     fn test_debugon() {
-        parse("debugon\r\n").expect_err("Should not parse 'debugon'");
+        parse_strict("debugon\r\n").expect_err("Should not parse 'debugon'");
     }
 
     #[test]
     fn test_debug_wrong_param() {
-        let ml = parse("debug abc\r\n");
+        let ml = parse_strict("debug abc\r\n");
         assert_eq!(ml.is_err(), true);
     }
 
     #[test]
     fn test_debug_cutoff() {
-        parse("debug    ontario\r\n").expect_err("Should not parse");
+        parse_strict("debug    ontario\r\n").expect_err("Should not parse");
     }
 
     #[test]
     fn test_isready() {
-        let ml = parse(" \tisready  \r\n").unwrap();
+        let ml = parse_strict(" \tisready  \r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::IsReady);
     }
 
     #[test]
     fn test_set_option_bool() {
-        let ml = parse("setoption name Nullmove value true\n").unwrap();
+        let ml = parse_strict("setoption name Nullmove value true\n").unwrap();
         assert_eq!(ml.len(), 1);
         let so = &ml[0];
 
@@ -398,7 +402,7 @@ mod tests {
     // setoption name Selectivity value 3\n
     #[test]
     fn test_set_option_int() {
-        let ml = parse("setoption name Selectivity is awesome value 3\n").unwrap();
+        let ml = parse_strict("setoption name Selectivity is awesome value 3\n").unwrap();
         assert_eq!(ml.len(), 1);
         let so = &ml[0];
 
@@ -418,7 +422,7 @@ mod tests {
     // setoption name Clear Hash
     #[test]
     fn test_set_option_button() {
-        let ml = parse("setoption name Clear Hash\r\n").unwrap();
+        let ml = parse_strict("setoption name Clear Hash\r\n").unwrap();
         assert_eq!(ml.len(), 1);
         let so = &ml[0];
 
@@ -434,7 +438,7 @@ mod tests {
 
     #[test]
     fn test_set_option_str() {
-        let ml = parse("setoption name NalimovPath value c:\\chess\\tb\\4;c:\\chess\\tb\\5\n").unwrap();
+        let ml = parse_strict("setoption name NalimovPath value c:\\chess\\tb\\4;c:\\chess\\tb\\5\n").unwrap();
         assert_eq!(ml.len(), 1);
         let so = &ml[0];
 
@@ -452,64 +456,64 @@ mod tests {
 
     #[test]
     fn test_register_later() {
-        let ml = parse("REGISTER    lateR\r\n").unwrap();
+        let ml = parse_strict("REGISTER    lateR\r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::register_later());
     }
 
     #[test]
     fn test_register_name_code() {
-        let ml = parse("register name Matija Kejžar code 4359874324\n").unwrap();
+        let ml = parse_strict("register name Matija Kejžar code 4359874324\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::register_code("Matija Kejžar", "4359874324"));
     }
 
     #[test]
     fn test_register_invalid() {
-        parse("register name Matija Kejžar\n").expect_err("Parse error expected.");
+        parse_strict("register name Matija Kejžar\n").expect_err("Parse error expected.");
     }
 
     #[test]
     fn test_register_invalid2() {
-        parse("register code XX-344-00LP name Matija Kejžar\n").expect_err("Parse error expected.");
+        parse_strict("register code XX-344-00LP name Matija Kejžar\n").expect_err("Parse error expected.");
     }
 
     #[test]
     fn test_ucinewgame() {
-        let ml = parse(" ucinewGAME \r\n").unwrap();
+        let ml = parse_strict(" ucinewGAME \r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::UciNewGame);
     }
 
     #[test]
     fn test_stop() {
-        let ml = parse("stop\r\n").unwrap();
+        let ml = parse_strict("stop\r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::Stop);
     }
 
     #[test]
     fn test_stop_really_stop() {
-        parse("stopper\r\n").expect_err("Parse error expected for 'stopper'.");
+        parse_strict("stopper\r\n").expect_err("Parse error expected for 'stopper'.");
     }
 
     #[test]
     fn test_ponderhit() {
-        let ml = parse("PonderHit   \r\n").unwrap();
+        let ml = parse_strict("PonderHit   \r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::PonderHit);
     }
 
     #[test]
     fn test_quit() {
-        let ml = parse("QUIT\r\n").unwrap();
+        let ml = parse_strict("QUIT\r\n").unwrap();
         assert_eq!(ml.len(), 1);
         assert_eq!(ml[0], UciMessage::Quit);
     }
 
     #[test]
     fn test_position_startpos() {
-        let ml = parse("position startpos moves e2e4 e7e5\r\n").unwrap();
+        let ml = parse_strict("position startpos moves e2e4 e7e5\r\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let m1 = UciMove {
@@ -547,7 +551,7 @@ mod tests {
 
     #[test]
     fn test_position_startpos_as_fen() {
-        let ml = parse("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves d2d4\r\n").unwrap();
+        let ml = parse_strict("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves d2d4\r\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let m1 = UciMove {
@@ -574,7 +578,7 @@ mod tests {
     // 2k5/6PR/8/8/2b4P/8/6K1/8 w - -
     #[test]
     fn test_position_endgame() {
-        let ml = parse("position fen 2k5/6PR/8/8/2b4P/8/6K1/8 w - - 0 53 moves g7g8q c4g8\r\n").unwrap();
+        let ml = parse_strict("position fen 2k5/6PR/8/8/2b4P/8/6K1/8 w - - 0 53 moves g7g8q c4g8\r\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let m1 = UciMove {
@@ -612,12 +616,12 @@ mod tests {
 
     #[test]
     fn test_position_incorrect_fen() {
-        parse("position fen 2k50/6PR/8/8/2b4P/8/6K1/8 w - - 0 53 moves g7g8q c4g8\r\n").expect_err("Parse should fail.");
+        parse_strict("position fen 2k50/6PR/8/8/2b4P/8/6K1/8 w - - 0 53 moves g7g8q c4g8\r\n").expect_err("Parse should fail.");
     }
 
     #[test]
     fn test_position_startpos_no_moves() {
-        let ml = parse("position   startpos\r\n").unwrap();
+        let ml = parse_strict("position   startpos\r\n").unwrap();
         assert_eq!(ml.len(), 1);
 
 
@@ -632,7 +636,7 @@ mod tests {
 
     #[test]
     fn test_position_fen_no_moves() {
-        let ml = parse("position    fen 2k5/6PR/8/8/2b4P/8/6K1/8 w   - - 0 53\r\n").unwrap();
+        let ml = parse_strict("position    fen 2k5/6PR/8/8/2b4P/8/6K1/8 w   - - 0 53\r\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let pos = UciMessage::Position {
@@ -646,7 +650,7 @@ mod tests {
 
     #[test]
     fn test_go_ponder() {
-        let ml = parse("go ponder\n").unwrap();
+        let ml = parse_strict("go ponder\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         assert_eq!(ml[0], UciMessage::go_ponder());
@@ -654,7 +658,7 @@ mod tests {
 
     #[test]
     fn test_go_infinite() {
-        let ml = parse("go infinite\n").unwrap();
+        let ml = parse_strict("go infinite\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         assert_eq!(ml[0], UciMessage::go_infinite());
@@ -662,7 +666,7 @@ mod tests {
 
     #[test]
     fn test_go_movetime() {
-        let ml = parse("go movetime  55055\n").unwrap();
+        let ml = parse_strict("go movetime  55055\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         assert_eq!(ml[0], UciMessage::go_movetime(55055));
@@ -670,7 +674,7 @@ mod tests {
 
     #[test]
     fn test_go_timeleft() {
-        let ml = parse("go wtime 903000 btime 770908 winc 15000 movestogo 17 binc 10000\n").unwrap();
+        let ml = parse_strict("go wtime 903000 btime 770908 winc 15000 movestogo 17 binc 10000\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let tl = UciTimeControl::TimeLeft {
@@ -689,7 +693,7 @@ mod tests {
 
     #[test]
     fn test_search_control_depth() {
-        let ml = parse("go ponder depth 6\n").unwrap();
+        let ml = parse_strict("go ponder depth 6\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let result = UciMessage::Go {
@@ -702,7 +706,7 @@ mod tests {
 
     #[test]
     fn test_search_control_mate() {
-        let ml = parse("go mate 12\n").unwrap();
+        let ml = parse_strict("go mate 12\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let result = UciMessage::Go {
@@ -715,7 +719,7 @@ mod tests {
 
     #[test]
     fn test_nodes_searchmoves() {
-        let ml = parse("go nodes 79093455456 searchmoves e2e4 d2d4 g2g1n\n").unwrap();
+        let ml = parse_strict("go nodes 79093455456 searchmoves e2e4 d2d4 g2g1n\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let sc = UciSearchControl {
@@ -743,7 +747,7 @@ mod tests {
 
     #[test]
     fn test_go_full_example() {
-        let ml = parse("go movetime 10000 searchmoves a1h8 depth 6 nodes 55000000\n").unwrap();
+        let ml = parse_strict("go movetime 10000 searchmoves a1h8 depth 6 nodes 55000000\n").unwrap();
         assert_eq!(ml.len(), 1);
 
         let tc = UciTimeControl::MoveTime(10000);
@@ -767,7 +771,30 @@ mod tests {
 
     #[test]
     fn test_two_command_doc_example() {
-        let ml = parse("position startpos\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
+        let ml = parse_strict("position startpos\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
         assert_eq!(ml.len(), 2);
+    }
+
+    #[test]
+    fn test_lax_mode() {
+        let ml = parse("position startpos\nunknown command\ngo ponder searchmoves e2e4 d2d4\n");
+        assert_eq!(ml.len(), 2);
+
+        match ml[0] {
+            UciMessage::Position { .. } => {},
+            _ => panic!("Expected a `position` message here")
+        };
+
+        match ml[1] {
+            UciMessage::Go { .. } => {},
+            _ => panic!("Expected a `go` message here")
+        };
+    }
+
+    // TODO not quite expected behavior
+    #[test]
+    fn test_strict_mode() {
+        let ml = parse_strict("position startpos\nunknown command\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
+        assert_eq!(ml.len(), 1);
     }
 }

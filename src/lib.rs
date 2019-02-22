@@ -14,6 +14,7 @@ extern crate pest_derive;
 pub use pest::error::Error;
 
 pub use self::parser::parse;
+pub use self::parser::parse_strict;
 pub use self::parser::Rule;
 pub use self::uci::CommunicationDirection;
 pub use self::uci::MessageList;
