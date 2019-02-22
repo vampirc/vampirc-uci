@@ -5,7 +5,8 @@
 
 
 use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
+use std::str::FromStr;
 
 use crate::uci::UciTimeControl::MoveTime;
 use crate::uci::UciTimeControl::TimeLeft;
@@ -138,7 +139,7 @@ impl UciMessage {
     ///
     /// # Examples
     /// ```
-    /// use vampirc_uci::uci::UciMessage;
+    /// use vampirc_uci::UciMessage;
     ///
     /// println!("{}", UciMessage::Uci.serialize()); // Should print `uci`.
     /// ```
@@ -552,7 +553,9 @@ impl UciPiece {
     }
 }
 
-impl From<&str> for UciPiece {
+impl FromStr for UciPiece {
+    type Err = FmtError;
+
     /// Creates a `UciPiece` from a `&str`, according to these rules:
     ///
     /// `"n"` - Knight
@@ -563,15 +566,15 @@ impl From<&str> for UciPiece {
     /// `"q"` - Queen
     ///
     /// Works with uppercase letters as well.
-    fn from(s: &str) -> Self {
+    fn from_str(s: &str) -> Result<UciPiece, FmtError> {
         match s.to_ascii_lowercase().as_str() {
-            "n" => UciPiece::Knight,
-            "p" => UciPiece::Pawn,
-            "b" => UciPiece::Bishop,
-            "r" => UciPiece::Rook,
-            "k" => UciPiece::King,
-            "q" => UciPiece::Queen,
-            _ => panic!(format!("No piece mapping for {}", s))
+            "n" => Ok(UciPiece::Knight),
+            "p" => Ok(UciPiece::Pawn),
+            "b" => Ok(UciPiece::Bishop),
+            "r" => Ok(UciPiece::Rook),
+            "k" => Ok(UciPiece::King),
+            "q" => Ok(UciPiece::Queen),
+            _ => Err(FmtError)
         }
     }
 }
@@ -661,6 +664,7 @@ pub struct UciFen(pub String);
 
 impl UciFen {
     /// Returns the FEN string.
+    #[inline]
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
@@ -671,6 +675,13 @@ impl From<&str> for UciFen {
     /// position. Does not validate the FEN.
     fn from(s: &str) -> Self {
         UciFen(s.to_string())
+    }
+}
+
+impl Display for UciFen {
+    /// Outputs the FEN string.
+    fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
+        write!(f, "{}", self.0)
     }
 }
 

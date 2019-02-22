@@ -4,6 +4,7 @@
 //! Behind the scenes, it uses the [PEST parser](https://github.com/pest-parser/pest). The corresponding PEG grammar is
 //! available [here](https://github.com/vampirc/vampirc-uci/blob/master/res/uci.pest).
 
+use std::str::FromStr;
 
 use pest::error::Error;
 use pest::iterators::Pair;
@@ -308,7 +309,7 @@ fn parse_a_move(sp: Pair<Rule>) -> UciMove {
             Rule::from_sq => { from_sq = parse_square(move_token.into_inner().next().unwrap()); }
             Rule::to_sq => { to_sq = parse_square(move_token.into_inner().next().unwrap()); }
             Rule::promotion => {
-                promotion = Some(UciPiece::from(move_token.as_span().as_str()));
+                promotion = Some(UciPiece::from_str(move_token.as_span().as_str()).unwrap());
             }
             _ => unreachable!()
         }
