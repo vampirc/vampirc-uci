@@ -1,4 +1,8 @@
-//use std::error::Result;
+//! The `parser` module contains the `parse` method that performs the parsing of UCI messages in their respective
+//! `UciMessage` variants.
+//!
+//! Behind the scenes, it uses the [PEST parser](https://github.com/pest-parser/pest). The corresponding PEG grammar is
+//! available [here](https://github.com/vampirc/vampirc-uci/blob/master/res/uci.pest).
 
 
 use pest::error::Error;
@@ -12,6 +16,21 @@ use crate::uci::UciMessage::Uci;
 #[grammar = "../res/uci.pest"]
 struct UciParser;
 
+/// Parses the specified `&str s` into a list of `UciMessage`s. Please not that this method will return an `Error` if
+/// any of the input violates the grammar rules.
+///
+/// The UCI messages are separated by a newline character, as per the UCI protocol specification.
+///
+/// # Examples
+///
+/// ```
+/// use vampirc_uci::UciMessage;
+/// use vampirc_uci::parse;
+///
+/// let messages = parse("position startpos\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
+/// assert_eq!(messages.len(), 2);
+///
+/// ```
 pub fn parse(s: &str) -> Result<MessageList, Error<Rule>> {
     let mut ml = MessageList::default();
 
@@ -743,5 +762,11 @@ mod tests {
         };
 
         assert_eq!(ml[0], result);
+    }
+
+    #[test]
+    fn test_two_command_doc_example() {
+        let ml = parse("position startpos\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
+        assert_eq!(ml.len(), 2);
     }
 }

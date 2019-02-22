@@ -1,6 +1,7 @@
-//! The `uci` module contains the definitions that represent UCI protocol messages. Usually, these messages will be
-//! obtained by calling the `parse` method of the `parser` module, but you can always construct them in code and then
-//! print them to the standard output to communicate with the engine or GUI.
+//! The `uci` module contains the definitions that represent UCI protocol messages.
+//!
+//! Usually, these messages will be obtained by calling the `parse` method of the `parser` module, but you can always
+//! construct them in code and then print them to the standard output to communicate with the engine or GUI.
 
 
 use std::error::Error;
@@ -90,8 +91,7 @@ pub enum UciMessage {
 }
 
 impl UciMessage {
-
-    /// Construct `register later` a [UciMessage::Register](enum.UciMessage.html#variant.Register)  message.
+    /// Constructs a `register later` [UciMessage::Register](enum.UciMessage.html#variant.Register)  message.
     pub fn register_later() -> UciMessage {
         UciMessage::Register {
             later: true,
@@ -100,7 +100,7 @@ impl UciMessage {
         }
     }
 
-    /// Construct a `register <code> <name>` [UciMessage::Register](enum.UciMessage.html#variant.Register) message.
+    /// Constructs a `register <code> <name>` [UciMessage::Register](enum.UciMessage.html#variant.Register) message.
     pub fn register_code(name: &str, code: &str) -> UciMessage {
         UciMessage::Register {
             later: false,
@@ -117,7 +117,7 @@ impl UciMessage {
         }
     }
 
-    /// Construct a `go infinite` [UciMessage::Register](enum.UciMessage.html#variant.Go) message.
+    /// Constructs a `go infinite` [UciMessage::Register](enum.UciMessage.html#variant.Go) message.
     pub fn go_infinite() -> UciMessage {
         UciMessage::Go {
             search_control: None,
@@ -125,7 +125,7 @@ impl UciMessage {
         }
     }
 
-    /// Construct a `go movetime <milliseconds>` [UciMessage::Register](enum.UciMessage.html#variant.Go) message, with
+    /// Constructs a `go movetime <milliseconds>` [UciMessage::Register](enum.UciMessage.html#variant.Go) message, with
     /// `milliseconds` as the argument.
     pub fn go_movetime(milliseconds: u64) -> UciMessage {
         UciMessage::Go {

@@ -23,7 +23,6 @@ pub use self::uci::UciMove;
 pub use self::uci::UciPiece;
 pub use self::uci::UciSearchControl;
 pub use self::uci::UciSquare;
-// Re–exports
 pub use self::uci::UciTimeControl;
 
 pub mod uci;
