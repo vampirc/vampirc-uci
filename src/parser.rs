@@ -1,4 +1,4 @@
-//! The `parser` module contains the `parse` method that performs the parsing of UCI messages in their respective
+//! The `parser` module contains the `parse` method that performs the parsing of UCI messages into their respective
 //! `UciMessage` variants.
 //!
 //! Behind the scenes, it uses the [PEST parser](https://github.com/pest-parser/pest). The corresponding PEG grammar is

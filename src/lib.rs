@@ -1,10 +1,11 @@
-//! This is documentation for the `vampirc-uci` crate.
-//!
 //! The Vampirc project is a chess engine written in Rust. `vampirc-uci` is a crate that handles the parsing of the
 //! [Universal Chess Interface (UCI) protocol](https://en.wikipedia.org/wiki/Universal_Chess_Interface), a way for a
 //! chess engine to communicate with a GUI.
 //!
-//! See the README.md file for usage instructions.
+//! To parse the UCI messages, it uses the [PEST parser](https://github.com/pest-parser/pest). The corresponding PEG
+//! grammar is available [here](https://github.com/vampirc/vampirc-uci/blob/master/res/uci.pest).
+//!
+//! See the [README.md](https://github.com/vampirc/vampirc-uci/blob/master/README.md) file for usage instructions.
 
 
 extern crate pest;
