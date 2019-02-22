@@ -17,10 +17,13 @@ use crate::uci::UciMessage::Uci;
 #[grammar = "../res/uci.pest"]
 struct UciParser;
 
-/// Parses the specified `&str s` into a list of `UciMessage`s. Please not that this method will return an `Error` if
+/// Parses the specified `&str s` into a list of `UciMessage`s. Please note that this method will return an `Error` if
 /// any of the input violates the grammar rules.
 ///
 /// The UCI messages are separated by a newline character, as per the UCI protocol specification.
+///
+/// This method differs from the `parse(..)` method in the fact that any unrecognized tokens/messages will result in
+/// an error being returned.
 ///
 /// # Examples
 ///
@@ -36,6 +39,24 @@ pub fn parse_strict(s: &str) -> Result<MessageList, Error<Rule>> {
     do_parse_uci(s, Rule::commands)
 }
 
+/// Parses the specified `&str s` into a list of `UciMessage`s. Please note that this method will ignore any
+/// unrecognized messages, which is in-line with the recommendations of the UCI protocol specification.
+///
+/// The UCI messages are separated by a newline character, as per the UCI protocol specification.
+///
+/// This method differs from the `parse_strict(..)` method in the fact that any unrecognized tokens/messages will
+/// simply be ignored.
+///
+/// # Examples
+///
+/// ```
+/// use vampirc_uci::UciMessage;
+/// use vampirc_uci::parse;
+///
+/// let messages = parse("position startpos\n  unknown message that will be ignored  \ngo infinite\n");
+/// assert_eq!(messages.len(), 2);
+///
+/// ```
 pub fn parse(s: &str) -> MessageList {
     do_parse_uci(s, Rule::commands_ignore_unknown).unwrap()
 }
@@ -791,10 +812,9 @@ mod tests {
         };
     }
 
-    // TODO not quite expected behavior
     #[test]
+    #[should_panic]
     fn test_strict_mode() {
-        let ml = parse_strict("position startpos\nunknown command\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
-        assert_eq!(ml.len(), 1);
+        parse_strict("position startpos\nunknown command\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
     }
 }

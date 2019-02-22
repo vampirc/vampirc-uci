@@ -1,11 +1,11 @@
 WHITESPACE = _{ " " | "\t" }
 
-commands = _{ SOI ~ ws_nl* ~ (message ~ ws_nl+)+}
+commands = _{ SOI ~ ws_nl* ~ message+ ~ !any}
 
-commands_ignore_unknown = _{ SOI ~ ws_nl* ~ ((message | any+) ~ ws_nl+)* }
+commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* }
 
 message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit |
-            position | go)}
+            position | go) ~ WHITESPACE* ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
 
@@ -93,3 +93,4 @@ alpha = { 'a'..'z' | 'A'..'Z' }
 digit = { '0'..'9' }
 non_ws = _{!(WHITESPACE | NEWLINE) ~ ANY*}
 ws_nl = _{ WHITESPACE | NEWLINE }
+something = _{ any+ ~ NEWLINE+}
