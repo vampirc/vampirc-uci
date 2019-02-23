@@ -13,7 +13,7 @@ authors = ["Matija Kejžar <matija@kejzar.si>"]
 edition = "2018"
 
 [badges]
-gitlab = { repository = "https://github.com/vampirc/vampirc-uci.git", branch = "master" }
+appveyor = { repository = "https://github.com/vampirc/vampirc-uci.git", branch = "master", service = "github" }
 travis-ci = { repository = "vampirc/vampirc-uci", branch = "master" }
 maintenance = { status = "actively-developed" }
 
