@@ -78,7 +78,7 @@ for m in messages {
 
 ## API
 
-The full API documentation is available at [crates.io](https://docs.rs/vampirc_uci).
+The full API documentation is available at [crates.io](https://docs.rs/vampirc-uci/0.5.0/vampirc_uci/).
 
 ## Limitations
 
