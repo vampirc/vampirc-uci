@@ -89,6 +89,20 @@ pub enum UciMessage {
         /// Search-related `go` parameters (sub-commands).
         search_control: Option<UciSearchControl>,
     },
+
+    // From this point on we have client-bound messages
+
+    /// The `id` GUI-bound message.
+    Id {
+        name: Option<String>,
+        author: Option<String>,
+    },
+
+    /// The `uciok` GUI-bound message.
+    UciOk,
+
+    /// The `ReadyOk` GUI-bound message.
+    ReadyOk
 }
 
 impl UciMessage {
@@ -132,6 +146,22 @@ impl UciMessage {
         UciMessage::Go {
             search_control: None,
             time_control: Some(UciTimeControl::MoveTime(milliseconds))
+        }
+    }
+
+    /// Constructs an `id <name>` GUI-bound message.
+    pub fn id_name(name: &str) -> UciMessage {
+        UciMessage::Id {
+            name: Some(name.to_string()),
+            author: None,
+        }
+    }
+
+    /// Constructs an `id <name>` GUI-bound message.
+    pub fn id_author(author: &str) -> UciMessage {
+        UciMessage::Id {
+            name: None,
+            author: Some(author.to_string()),
         }
     }
 
@@ -258,7 +288,25 @@ impl UciMessage {
             UciMessage::UciNewGame => "ucinewgame".to_string(),
             UciMessage::Stop => "stop".to_string(),
             UciMessage::PonderHit => "ponderhit".to_string(),
-            UciMessage::Quit => "quit".to_string()
+            UciMessage::Quit => "quit".to_string(),
+
+
+            // GUI-bound from this point on
+
+            UciMessage::Id { name, author } => {
+                let mut s = String::from("id ");
+                if let Some(n) = name {
+                    s += "name ";
+                    s += n;
+                } else if let Some(a) = author {
+                    s += "author ";
+                    s += a;
+                }
+
+                s
+            },
+            UciMessage::UciOk => String::from("uciok"),
+            UciMessage::ReadyOk => String::from("readyok"),
         }
     }
 
@@ -276,7 +324,7 @@ impl UciMessage {
             UciMessage::PonderHit |
             UciMessage::Quit |
             UciMessage::Go { .. } => CommunicationDirection::GuiToEngine,
-//            _ => CommunicationDirection::EngineToGui
+            _ => CommunicationDirection::EngineToGui
         }
     }
 
@@ -688,3 +736,40 @@ impl Display for UciFen {
 
 /// A vector containing several `UciMessage`s.
 pub type MessageList = Vec<UciMessage>;
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_direction_engine_bound() {
+        assert_eq!(UciMessage::PonderHit.direction(), CommunicationDirection::GuiToEngine);
+    }
+
+    #[test]
+    fn test_direction_gui_bound() {
+        assert_eq!(UciMessage::UciOk.direction(), CommunicationDirection::EngineToGui);
+    }
+
+    #[test]
+    fn test_serialize_id_name() {
+        assert_eq!(UciMessage::id_name("Vampirc 0.5.0").serialize().as_str(), "id name Vampirc 0.5.0");
+    }
+
+    #[test]
+    // TODO change to zh
+    fn test_serialize_id_author() {
+        assert_eq!(UciMessage::id_author("Matija Kejzar").serialize().as_str(), "id author Matija Kejzar");
+    }
+
+    #[test]
+    fn test_serialize_uciok() {
+        assert_eq!(UciMessage::UciOk.serialize().as_str(), "uciok");
+    }
+
+    #[test]
+    fn test_serialize_readyok() {
+        assert_eq!(UciMessage::ReadyOk.serialize().as_str(), "readyok");
+    }
+}
