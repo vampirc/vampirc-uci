@@ -8,6 +8,7 @@ use std::error::Error;
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
+use crate::uci::UciMessage::Registration;
 use crate::uci::UciTimeControl::MoveTime;
 use crate::uci::UciTimeControl::TimeLeft;
 
@@ -114,7 +115,13 @@ pub enum UciMessage {
 
         /// The move the engine would like to ponder on.
         ponder: Option<UciMove>,
-    }
+    },
+
+    /// The `copyprotection` GUI-bound message.
+    CopyProtection(ProtectionState),
+
+    /// The `registration` GUI-bound message.
+    Registration(ProtectionState)
 }
 
 impl UciMessage {
@@ -343,6 +350,21 @@ impl UciMessage {
                 }
 
                 s
+            },
+            UciMessage::CopyProtection(cp_state) | UciMessage::Registration(cp_state) => {
+                let mut s = match self {
+                    UciMessage::CopyProtection(..) => String::from("copyprotection "),
+                    UciMessage::Registration(..) => String::from("registration "),
+                    _ => unreachable!()
+                };
+
+                match cp_state {
+                    ProtectionState::Checking => s += "checking",
+                    ProtectionState::Ok => s += "ok",
+                    ProtectionState::Error => s += "error",
+                }
+
+                s
             }
         }
     }
@@ -529,6 +551,20 @@ impl Default for UciSearchControl {
 //    }
 //
 //}
+
+/// Represents the copy protection or registration state.
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub enum ProtectionState {
+    /// Signifies the engine is checking the copy protection or registration.
+    Checking,
+
+    /// Signifies the copy protection or registration has been validated.
+    Ok,
+
+    /// Signifies error in copy protection or registratin validation.
+    Error,
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum OptionType {
     Check,
@@ -777,6 +813,8 @@ pub type MessageList = Vec<UciMessage>;
 
 #[cfg(test)]
 mod tests {
+    use crate::uci::UciMessage::CopyProtection;
+
     use super::*;
 
     #[test]
@@ -819,5 +857,15 @@ mod tests {
     fn test_serialize_bestmove_with_options() {
         assert_eq!(UciMessage::best_move_with_ponder(UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('a', 5)),
                                                      UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('d', 6))).serialize().as_str(), "bestmove b4a5 ponder b4d6");
+    }
+
+    #[test]
+    fn test_serialize_copyprotection() {
+        assert_eq!(UciMessage::CopyProtection(ProtectionState::Checking).serialize().as_str(), "copyprotection checking");
+    }
+
+    #[test]
+    fn test_serialize_registration() {
+        assert_eq!(UciMessage::Registration(ProtectionState::Ok).serialize().as_str(), "registration ok");
     }
 }
