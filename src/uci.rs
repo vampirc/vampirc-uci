@@ -94,7 +94,10 @@ pub enum UciMessage {
 
     /// The `id` GUI-bound message.
     Id {
+        /// The name of the engine, possibly including the version.
         name: Option<String>,
+
+        /// The name of the author of the engine.
         author: Option<String>,
     },
 
@@ -102,7 +105,16 @@ pub enum UciMessage {
     UciOk,
 
     /// The `ReadyOk` GUI-bound message.
-    ReadyOk
+    ReadyOk,
+
+    /// The `bestmove` GUI-bound message.
+    BestMove {
+        /// The move the engine thinks is the best one in the position.
+        best_move: UciMove,
+
+        /// The move the engine would like to ponder on.
+        ponder: Option<UciMove>,
+    }
 }
 
 impl UciMessage {
@@ -162,6 +174,22 @@ impl UciMessage {
         UciMessage::Id {
             name: None,
             author: Some(author.to_string()),
+        }
+    }
+
+    /// Constructs a `bestmove` GUI-bound message without the ponder move.
+    pub fn best_move(best_move: UciMove) -> UciMessage {
+        UciMessage::BestMove {
+            best_move,
+            ponder: None,
+        }
+    }
+
+    /// Constructs a `bestmove` GUI-bound message _with_ the ponder move.
+    pub fn best_move_with_ponder(best_move: UciMove, ponder: UciMove) -> UciMessage {
+        UciMessage::BestMove {
+            best_move,
+            ponder: Some(ponder),
         }
     }
 
@@ -307,6 +335,15 @@ impl UciMessage {
             },
             UciMessage::UciOk => String::from("uciok"),
             UciMessage::ReadyOk => String::from("readyok"),
+            UciMessage::BestMove { best_move, ponder } => {
+                let mut s = String::from(format!("bestmove {}", *best_move));
+
+                if let Some(p) = ponder {
+                    s += format!(" ponder {}", *p).as_str();
+                }
+
+                s
+            }
         }
     }
 
@@ -771,5 +808,16 @@ mod tests {
     #[test]
     fn test_serialize_readyok() {
         assert_eq!(UciMessage::ReadyOk.serialize().as_str(), "readyok");
+    }
+
+    #[test]
+    fn test_serialize_bestmove() {
+        assert_eq!(UciMessage::best_move(UciMove::from_to(UciSquare::from('a', 1), UciSquare::from('a', 7))).serialize().as_str(), "bestmove a1a7");
+    }
+
+    #[test]
+    fn test_serialize_bestmove_with_options() {
+        assert_eq!(UciMessage::best_move_with_ponder(UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('a', 5)),
+                                                     UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('d', 6))).serialize().as_str(), "bestmove b4a5 ponder b4d6");
     }
 }
