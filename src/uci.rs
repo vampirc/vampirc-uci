@@ -101,7 +101,7 @@ pub enum UciMessage {
     /// The `uciok` GUI-bound message.
     UciOk,
 
-    /// The `ReadyOk` GUI-bound message.
+    /// The `readyok` GUI-bound message.
     ReadyOk,
 
     /// The `bestmove` GUI-bound message.
