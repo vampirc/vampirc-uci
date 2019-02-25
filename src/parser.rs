@@ -349,10 +349,6 @@ fn parse_a_move(sp: Pair<Rule>) -> UciMove {
 
 #[cfg(test)]
 mod tests {
-    use crate::uci::UciMessage::Uci;
-    use crate::uci::UciMessage::UciNewGame;
-    use crate::uci::UciTimeControl::TimeLeft;
-
     use super::*;
 
     #[test]

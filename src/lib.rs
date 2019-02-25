@@ -22,6 +22,7 @@ pub use self::uci::MessageList;
 pub use self::uci::UciFen;
 pub use self::uci::UciMessage;
 pub use self::uci::UciMove;
+pub use self::uci::UciOptionConfig;
 pub use self::uci::UciPiece;
 pub use self::uci::UciSearchControl;
 pub use self::uci::UciSquare;

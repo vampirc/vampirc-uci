@@ -8,10 +8,6 @@ use std::error::Error;
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
-use crate::uci::UciMessage::Registration;
-use crate::uci::UciTimeControl::MoveTime;
-use crate::uci::UciTimeControl::TimeLeft;
-
 /// Specifies whether a message is engine- or GUI-bound.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum CommunicationDirection {
@@ -121,7 +117,10 @@ pub enum UciMessage {
     CopyProtection(ProtectionState),
 
     /// The `registration` GUI-bound message.
-    Registration(ProtectionState)
+    Registration(ProtectionState),
+
+    /// The `option` GUI-bound message.
+    Option(UciOptionConfig)
 }
 
 impl UciMessage {
@@ -291,7 +290,6 @@ impl UciMessage {
                                 s += format!("movestogo {} ", *mtg).as_str();
                             }
                         }
-                        _ => {}
                     }
                 }
 
@@ -365,7 +363,8 @@ impl UciMessage {
                 }
 
                 s
-            }
+            },
+            UciMessage::Option(config) => config.serialize()
         }
     }
 
@@ -465,7 +464,7 @@ pub enum UciTimeControl {
 impl UciTimeControl {
     /// Returns a `UciTimeControl::TimeLeft` with all members set to `None`.
     pub fn time_left() -> UciTimeControl {
-        TimeLeft {
+        UciTimeControl::TimeLeft {
             white_time: None,
             black_time: None,
             white_increment: None,
@@ -540,18 +539,6 @@ impl Default for UciSearchControl {
     }
 }
 
-//
-//
-//pub enum Argument {
-//
-//    Parameter(String),
-//    Option {
-//        name: String,
-//        value:
-//    }
-//
-//}
-
 /// Represents the copy protection or registration state.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ProtectionState {
@@ -565,59 +552,134 @@ pub enum ProtectionState {
     Error,
 }
 
+/// Represents a UCI option definition.
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
-pub enum UciOption {
+pub enum UciOptionConfig {
+    /// The option of type `check` (a boolean).
     Check {
+        /// The name of the option.
         name: String,
+
+        /// The default value of this `bool` property.
         default: Option<bool>,
     },
+
+    /// The option of type `spin` (a signed integer).
     Spin {
+        /// The name of the option.
         name: String,
+
+        /// The default value of this integer property.
         default: Option<i64>,
+
+        /// The minimal value of this integer property.
         min: Option<i64>,
+
+        /// The maximal value of this integer property.
         max: Option<i64>,
     },
+
+    /// The option of type `combo` (a list of strings).
     Combo {
+        /// The name of the option.
         name: String,
+
+        /// The default value for this list of strings.
         default: Option<String>,
+
+        /// The list of acceptable strings.
         var: Vec<String>,
     },
+
+    /// The option of type `button` (an action).
     Button {
+        /// The name of the option.
         name: String
     },
+
+    /// The option of type `string` (a string, unsurprisingly).
     String {
+        /// The name of the option.
         name: String,
+
+        /// The default value of this string option.
         default: Option<String>,
     },
 }
 
-impl UciOption {
+impl UciOptionConfig {
+    /// Returns the name of the option.
     pub fn get_name(&self) -> &str {
         match self {
-            UciOption::Check { name, .. } | UciOption::Spin { name, .. } | UciOption::Combo { name, .. } | UciOption::Button { name } |
-            UciOption::String { name, .. } => name.as_str()
+            UciOptionConfig::Check { name, .. } | UciOptionConfig::Spin { name, .. } | UciOptionConfig::Combo { name, .. } | UciOptionConfig::Button { name } |
+            UciOptionConfig::String { name, .. } => name.as_str()
         }
     }
 
+    /// Returns the type string of the option (ie. `"check"`, `"spin"` ...)
     pub fn get_type_str(&self) -> &'static str {
         match self {
-            UciOption::Check { .. } => "check",
-            UciOption::Spin { .. } => "spin",
-            UciOption::Combo { .. } => "combo",
-            UciOption::Button { .. } => "button",
-            UciOption::String { .. } => "string"
+            UciOptionConfig::Check { .. } => "check",
+            UciOptionConfig::Spin { .. } => "spin",
+            UciOptionConfig::Combo { .. } => "combo",
+            UciOptionConfig::Button { .. } => "button",
+            UciOptionConfig::String { .. } => "string"
         }
     }
 
+    /// Serializes this option config into a full UCI message string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use vampirc_uci::{UciMessage, UciOptionConfig};
+    ///
+    /// let m = UciMessage::Option(UciOptionConfig::Check {
+    ///     name: String::from("Nullmove"),
+    ///     default: Some(true)
+    /// });
+    ///
+    /// assert_eq!(m.serialize(), "option name Nullmove type check default true");
+    /// ```
     pub fn serialize(&self) -> String {
         let mut s = String::from(format!("option name {} type {}", self.get_name(), self.get_type_str()));
         match self {
-            UciOption::Check { name, default } => {
+            UciOptionConfig::Check { default, .. } => {
                 if let Some(def) = default {
                     s += format!(" default {}", *def).as_str();
                 }
             },
-            _ => unreachable!() // TODO
+            UciOptionConfig::Spin { default, min, max, .. } => {
+                if let Some(def) = default {
+                    s += format!(" default {}", *def).as_str();
+                }
+
+                if let Some(m) = min {
+                    s += format!(" min {}", *m).as_str();
+                }
+
+                if let Some(m) = max {
+                    s += format!(" max {}", *m).as_str();
+                }
+            }
+            UciOptionConfig::Combo { default, var, .. } => {
+                if let Some(def) = default {
+                    s += format!(" default {}", *def).as_str();
+                }
+
+                for v in var {
+                    s += format!(" var {}", *v).as_str();
+                }
+            }
+            UciOptionConfig::String { default, .. } => {
+                if let Some(def) = default {
+                    s += format!(" default {}", *def).as_str();
+                }
+            }
+            UciOptionConfig::Button { .. } => {
+                // Do nothing, we're already good
+            }
+
         }
 
         s
@@ -625,61 +687,6 @@ impl UciOption {
 
 }
 
-
-//#[derive(Clone, Eq, PartialEq, Debug)]
-//pub struct UciOption<T> where T: Display + Debug {
-//    name: String,
-//    option_type: OptionType,
-//    min: Option<T>,
-//    max: Option<T>,
-//    default: T,
-//    var: Vec<T>,
-//}
-//
-//impl<T> UciOption<T> where T: Display + Debug {}
-//
-//impl<T> Display for UciOption<T> where T: Display + Debug {
-//    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-//        write!(f, "{}", self.serialize())
-//    }
-//}
-//
-//impl<'a, T> UciMessage<'a> for UciOption<T> where T: Display + Debug {
-//    fn name(&'a self) -> &'a str {
-//        self.name.as_str()
-//    }
-//
-//    fn serialize(&self) -> String {
-//        let mut s: String = String::from("option name ");
-//        s += self.name.as_str();
-//        s += " type ";
-//        s += format!(" type {} ", self.option_type).as_str();
-//        s += format!(" default {} ", self.default).as_str();
-//
-//        if let Some(min) = &self.min {
-//            s += format!(" min {}", *min).as_str();
-//        }
-//
-//        if let Some(max) = &self.max {
-//            s += format!(" max {}", *max).as_str();
-//        }
-//
-//        if self.var.len() > 0 {
-//            for (i, var) in (&self.var).into_iter().enumerate() {
-//                s += format!(" var {}", *var).as_str();
-//                if i < self.var.len() - 1 {
-//                    s += " ";
-//                }
-//            }
-//        }
-//
-//        s
-//    }
-//
-//    fn direction(&self) -> CommunicationDirection {
-//        CommunicationDirection::EngineToGui
-//    }
-//}
 
 /// An enum representing the chess piece types.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
@@ -906,5 +913,57 @@ mod tests {
     #[test]
     fn test_serialize_registration() {
         assert_eq!(UciMessage::Registration(ProtectionState::Ok).serialize().as_str(), "registration ok");
+    }
+
+    #[test]
+    fn test_serialize_check_option() {
+        let m = UciMessage::Option(UciOptionConfig::Check {
+            name: "Nullmove".to_string(),
+            default: Some(false),
+        });
+
+        assert_eq!(m.serialize(), "option name Nullmove type check default false");
+    }
+
+    #[test]
+    fn test_serialize_spin_option() {
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "Selectivity".to_string(),
+            default: Some(2),
+            min: Some(0),
+            max: Some(4),
+        });
+
+        assert_eq!(m.serialize(), "option name Selectivity type spin default 2 min 0 max 4");
+    }
+
+    #[test]
+    fn test_serialize_combo_option() {
+        let m = UciMessage::Option(UciOptionConfig::Combo {
+            name: "Style".to_string(),
+            default: Some(String::from("Normal")),
+            var: vec![String::from("Solid"), String::from("Normal"), String::from("Risky")],
+        });
+
+        assert_eq!(m.serialize(), "option name Style type combo default Normal var Solid var Normal var Risky");
+    }
+
+    #[test]
+    fn test_serialize_string_option() {
+        let m = UciMessage::Option(UciOptionConfig::String {
+            name: "Nalimov Path".to_string(),
+            default: Some(String::from("c:\\")),
+        });
+
+        assert_eq!(m.serialize(), "option name Nalimov Path type string default c:\\");
+    }
+
+    #[test]
+    fn test_serialize_button_option() {
+        let m = UciMessage::Option(UciOptionConfig::Button {
+            name: "Clear Hash".to_string()
+        });
+
+        assert_eq!(m.serialize(), "option name Clear Hash type button");
     }
 }
