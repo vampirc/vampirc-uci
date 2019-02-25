@@ -565,25 +565,64 @@ pub enum ProtectionState {
     Error,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
-pub enum OptionType {
-    Check,
-    Spin,
-    Combo,
-    Button,
-    String,
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub enum UciOption {
+    Check {
+        name: String,
+        default: Option<bool>,
+    },
+    Spin {
+        name: String,
+        default: Option<i64>,
+        min: Option<i64>,
+        max: Option<i64>,
+    },
+    Combo {
+        name: String,
+        default: Option<String>,
+        var: Vec<String>,
+    },
+    Button {
+        name: String
+    },
+    String {
+        name: String,
+        default: Option<String>,
+    },
 }
 
-impl Display for OptionType {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        match *self {
-            OptionType::Check => write!(f, "{}", "check"),
-            OptionType::Spin => write!(f, "{}", "spin"),
-            OptionType::Combo => write!(f, "{}", "combo"),
-            OptionType::Button => write!(f, "{}", "button"),
-            OptionType::String => write!(f, "{}", "string"),
+impl UciOption {
+    pub fn get_name(&self) -> &str {
+        match self {
+            UciOption::Check { name, .. } | UciOption::Spin { name, .. } | UciOption::Combo { name, .. } | UciOption::Button { name } |
+            UciOption::String { name, .. } => name.as_str()
         }
     }
+
+    pub fn get_type_str(&self) -> &'static str {
+        match self {
+            UciOption::Check { .. } => "check",
+            UciOption::Spin { .. } => "spin",
+            UciOption::Combo { .. } => "combo",
+            UciOption::Button { .. } => "button",
+            UciOption::String { .. } => "string"
+        }
+    }
+
+    pub fn serialize(&self) -> String {
+        let mut s = String::from(format!("option name {} type {}", self.get_name(), self.get_type_str()));
+        match self {
+            UciOption::Check { name, default } => {
+                if let Some(def) = default {
+                    s += format!(" default {}", *def).as_str();
+                }
+            },
+            _ => unreachable!() // TODO
+        }
+
+        s
+    }
+
 }
 
 
