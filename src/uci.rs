@@ -18,6 +18,10 @@ pub enum CommunicationDirection {
     EngineToGui,
 }
 
+pub trait Serializable {
+    fn serialize(&self) -> String;
+}
+
 /// An enumeration type containing representations for all messages supported by the UCI protocol.
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum UciMessage {
@@ -120,7 +124,10 @@ pub enum UciMessage {
     Registration(ProtectionState),
 
     /// The `option` GUI-bound message.
-    Option(UciOptionConfig)
+    Option(UciOptionConfig),
+
+    /// The `info` GUI-bound message.
+    Info(Vec<UciInfoAttribute>)
 }
 
 impl UciMessage {
@@ -199,6 +206,68 @@ impl UciMessage {
         }
     }
 
+    /// Returns whether the command was meant for the engine or for the GUI.
+    fn direction(&self) -> CommunicationDirection {
+        match self {
+            UciMessage::Uci |
+            UciMessage::Debug(..) |
+            UciMessage::IsReady |
+            UciMessage::Register { .. } |
+            UciMessage::Position { .. } |
+            UciMessage::SetOption { .. } |
+            UciMessage::UciNewGame |
+            UciMessage::Stop |
+            UciMessage::PonderHit |
+            UciMessage::Quit |
+            UciMessage::Go { .. } => CommunicationDirection::GuiToEngine,
+            _ => CommunicationDirection::EngineToGui
+        }
+    }
+
+    /// If this `UciMessage` is a `UciMessage::SetOption` and the value of that option is a `bool`, this method returns
+    /// the `bool` value, otherwise it returns `None`.
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            UciMessage::SetOption { value, .. } => {
+                if let Some(val) = value {
+                    let pr = str::parse(val.as_str());
+                    if pr.is_ok() {
+                        return Some(pr.unwrap());
+                    }
+                }
+
+                None
+            }
+            _ => None
+        }
+    }
+
+    /// If this `UciMessage` is a `UciMessage::SetOption` and the value of that option is an integer, this method
+    /// returns the `i32` value of the integer, otherwise it returns `None`.
+    pub fn as_i32(&self) -> Option<i32> {
+        match self {
+            UciMessage::SetOption { value, .. } => {
+                if let Some(val) = value {
+                    let pr = str::parse(val.as_str());
+                    if pr.is_ok() {
+                        return Some(pr.unwrap());
+                    }
+                }
+
+                None
+            }
+            _ => None
+        }
+    }
+}
+
+impl Display for UciMessage {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{}", self.serialize())
+    }
+}
+
+impl Serializable for UciMessage {
     /// Serializes the command into a String.
     ///
     /// # Examples
@@ -207,7 +276,7 @@ impl UciMessage {
     ///
     /// println!("{}", UciMessage::Uci.serialize()); // Should print `uci`.
     /// ```
-    pub fn serialize(&self) -> String {
+    fn serialize(&self) -> String {
         match self {
             UciMessage::Debug(on) => if *on { String::from("debug on") } else { String::from("debug off") },
             UciMessage::Register { later, name, code } => {
@@ -364,68 +433,12 @@ impl UciMessage {
 
                 s
             },
-            UciMessage::Option(config) => config.serialize()
-        }
-    }
-
-    /// Returns whether the command was meant for the engine or for the GUI.
-    fn direction(&self) -> CommunicationDirection {
-        match self {
-            UciMessage::Uci |
-            UciMessage::Debug(..) |
-            UciMessage::IsReady |
-            UciMessage::Register { .. } |
-            UciMessage::Position { .. } |
-            UciMessage::SetOption { .. } |
-            UciMessage::UciNewGame |
-            UciMessage::Stop |
-            UciMessage::PonderHit |
-            UciMessage::Quit |
-            UciMessage::Go { .. } => CommunicationDirection::GuiToEngine,
-            _ => CommunicationDirection::EngineToGui
-        }
-    }
-
-    /// If this `UciMessage` is a `UciMessage::SetOption` and the value of that option is a `bool`, this method returns
-    /// the `bool` value, otherwise it returns `None`.
-    pub fn as_bool(&self) -> Option<bool> {
-        match self {
-            UciMessage::SetOption { value, .. } => {
-                if let Some(val) = value {
-                    let pr = str::parse(val.as_str());
-                    if pr.is_ok() {
-                        return Some(pr.unwrap());
-                    }
-                }
-
-                None
+            UciMessage::Option(config) => config.serialize(),
+            UciMessage::Info(info_line) => {
+                // TODO
+                "TODO".to_string()
             }
-            _ => None
         }
-    }
-
-    /// If this `UciMessage` is a `UciMessage::SetOption` and the value of that option is an integer, this method
-    /// returns the `i32` value of the integer, otherwise it returns `None`.
-    pub fn as_i32(&self) -> Option<i32> {
-        match self {
-            UciMessage::SetOption { value, .. } => {
-                if let Some(val) = value {
-                    let pr = str::parse(val.as_str());
-                    if pr.is_ok() {
-                        return Some(pr.unwrap());
-                    }
-                }
-
-                None
-            }
-            _ => None
-        }
-    }
-}
-
-impl Display for UciMessage {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        write!(f, "{}", self.serialize())
     }
 }
 
@@ -626,7 +639,9 @@ impl UciOptionConfig {
             UciOptionConfig::String { .. } => "string"
         }
     }
+}
 
+impl Serializable for UciOptionConfig {
     /// Serializes this option config into a full UCI message string.
     ///
     /// # Examples
@@ -641,7 +656,7 @@ impl UciOptionConfig {
     ///
     /// assert_eq!(m.serialize(), "option name Nullmove type check default true");
     /// ```
-    pub fn serialize(&self) -> String {
+    fn serialize(&self) -> String {
         let mut s = String::from(format!("option name {} type {}", self.get_name(), self.get_type_str()));
         match self {
             UciOptionConfig::Check { default, .. } => {
@@ -679,14 +694,100 @@ impl UciOptionConfig {
             UciOptionConfig::Button { .. } => {
                 // Do nothing, we're already good
             }
-
         }
 
         s
     }
-
 }
 
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub enum UciInfoAttribute {
+    Depth(u8),
+
+    SelDepth(u8),
+
+    Time(u64),
+
+    Nodes(u64),
+
+    Pv(Vec<UciMove>),
+
+    MultiPv(u16),
+
+    Score {
+        cp: Option<i32>,
+        mate: Option<i8>,
+        lower_bound: Option<bool>,
+        upper_bound: Option<bool>,
+    },
+
+    CurrMove(UciMove),
+
+    CurrMoveNum(u16),
+
+    HashFull(u16),
+
+    Nps(u64),
+
+    TbHits(u64),
+
+    SbHits(u64),
+
+    CpuLoad(u16),
+
+    String(String),
+
+    Refutation(Vec<UciMove>),
+
+    CurrLine {
+        cpu_nr: Option<u16>,
+        moves: Vec<UciMove>,
+    },
+
+    Any(String, String),
+}
+
+impl UciInfoAttribute {
+    pub fn get_name(&self) -> &str {
+        match self {
+            UciInfoAttribute::Depth(..) => "depth",
+            UciInfoAttribute::SelDepth(..) => "seldepth",
+            UciInfoAttribute::Time(..) => "time",
+            UciInfoAttribute::Nodes(..) => "nodes",
+            UciInfoAttribute::Pv(..) => "pv",
+            UciInfoAttribute::MultiPv(..) => "multipv",
+            UciInfoAttribute::Score { .. } => "score",
+            UciInfoAttribute::CurrMove(..) => "currmove",
+            UciInfoAttribute::CurrMoveNum(..) => "currmovenum",
+            UciInfoAttribute::HashFull(..) => "hashfull",
+            UciInfoAttribute::Nps(..) => "nps",
+            UciInfoAttribute::TbHits(..) => "tbhits",
+            UciInfoAttribute::SbHits(..) => "sbhits",
+            UciInfoAttribute::CpuLoad(..) => "cpuload",
+            UciInfoAttribute::String(..) => "string",
+            UciInfoAttribute::Refutation(..) => "refutation",
+            UciInfoAttribute::CurrLine { .. } => "currline",
+            UciInfoAttribute::Any(name, ..) => name.as_str()
+        }
+    }
+}
+
+impl Serializable for UciInfoAttribute {
+    fn serialize(&self) -> String {
+        let mut s = format!("{}", self.get_name());
+        match self {
+            UciInfoAttribute::Depth(depth) => s += format!(" {}", *depth).as_str(),
+            UciInfoAttribute::SelDepth(depth) => s += format!(" {}", *depth).as_str(),
+            UciInfoAttribute::Time(time) => s += format!(" {}", *time).as_str(),
+            UciInfoAttribute::Nodes(nodes) => s += format!(" {}", *nodes).as_str(),
+
+            _ => unimplemented!()
+        }
+
+        s
+    }
+}
 
 /// An enum representing the chess piece types.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
