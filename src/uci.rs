@@ -18,7 +18,7 @@ pub enum CommunicationDirection {
     EngineToGui,
 }
 
-pub trait Serializable {
+pub trait Serializable: Display {
     fn serialize(&self) -> String;
 }
 
@@ -272,7 +272,7 @@ impl Serializable for UciMessage {
     ///
     /// # Examples
     /// ```
-    /// use vampirc_uci::UciMessage;
+    /// use vampirc_uci::{UciMessage, Serializable};
     ///
     /// println!("{}", UciMessage::Uci.serialize()); // Should print `uci`.
     /// ```
@@ -306,14 +306,10 @@ impl Serializable for UciMessage {
                 }
 
                 if moves.len() > 0 {
-                    s += String::from(" moves ").as_str();
+                    s += String::from(" moves").as_str();
 
-                    for (i, m) in moves.into_iter().enumerate() {
-                        s += format!("{}", *m).as_str();
-
-                        if i < moves.len() - 1 {
-                            s += String::from(" ").as_str();
-                        }
+                    for m in moves {
+                        s += format!(" {}", *m).as_str();
                     }
                 }
 
@@ -435,8 +431,13 @@ impl Serializable for UciMessage {
             },
             UciMessage::Option(config) => config.serialize(),
             UciMessage::Info(info_line) => {
-                // TODO
-                "TODO".to_string()
+                let mut s = String::from("info");
+
+                for a in info_line {
+                    s += &format!(" {}", a.serialize());
+                }
+
+                s
             }
         }
     }
@@ -647,7 +648,7 @@ impl Serializable for UciOptionConfig {
     /// # Examples
     ///
     /// ```
-    /// use vampirc_uci::{UciMessage, UciOptionConfig};
+    /// use vampirc_uci::{UciMessage, UciOptionConfig, Serializable};
     ///
     /// let m = UciMessage::Option(UciOptionConfig::Check {
     ///     name: String::from("Nullmove"),
@@ -697,6 +698,12 @@ impl Serializable for UciOptionConfig {
         }
 
         s
+    }
+}
+
+impl Display for UciOptionConfig {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{}", self.serialize())
     }
 }
 
@@ -781,11 +788,59 @@ impl Serializable for UciInfoAttribute {
             UciInfoAttribute::SelDepth(depth) => s += format!(" {}", *depth).as_str(),
             UciInfoAttribute::Time(time) => s += format!(" {}", *time).as_str(),
             UciInfoAttribute::Nodes(nodes) => s += format!(" {}", *nodes).as_str(),
+            UciInfoAttribute::Pv(moves) | UciInfoAttribute::Refutation(moves) => {
+                if !moves.is_empty() {
+                    for m in moves {
+                        s += format!(" {} ", m).as_str();
+                    }
+                }
+            },
+            UciInfoAttribute::MultiPv(num) => s += format!(" {}", *num).as_str(),
+            UciInfoAttribute::Score { cp, mate, lower_bound, upper_bound } => {
+                if let Some(c) = cp {
+                    s += format!(" cp {}", *c).as_str();
+                }
 
-            _ => unimplemented!()
+                if let Some(m) = mate {
+                    s += format!(" mate {}", *m).as_str();
+                }
+
+                if lower_bound.is_some() {
+                    s += " lowerbound";
+                } else if upper_bound.is_some() {
+                    s += " upperbound";
+                }
+            },
+            UciInfoAttribute::CurrMove(uci_move) => s += &format!(" {}", *uci_move),
+            UciInfoAttribute::CurrMoveNum(num) => s += &format!(" {}", *num),
+            UciInfoAttribute::HashFull(permill) => s += &format!(" {}", *permill),
+            UciInfoAttribute::Nps(nps) => s += &format!(" {}", *nps),
+            UciInfoAttribute::TbHits(hits) | UciInfoAttribute::SbHits(hits) => s += &format!(" {}", *hits),
+            UciInfoAttribute::CpuLoad(load) => s += &format!(" {}", *load),
+            UciInfoAttribute::String(string) => s += string,
+            UciInfoAttribute::CurrLine { cpu_nr, moves } => {
+                if let Some(c) = cpu_nr {
+                    s += &format!(" cpunr {} ", *c);
+                }
+
+                if !moves.is_empty() {
+                    for m in moves {
+                        s += &format!(" {} ", m);
+                    }
+                }
+            },
+            UciInfoAttribute::Any(name, value) => {
+                s += &format!("{} {}", name, value);
+            }
         }
 
         s
+    }
+}
+
+impl Display for UciInfoAttribute {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{}", self.serialize())
     }
 }
 

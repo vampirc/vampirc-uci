@@ -19,6 +19,7 @@ pub use self::parser::parse_strict;
 pub use self::parser::Rule;
 pub use self::uci::CommunicationDirection;
 pub use self::uci::MessageList;
+pub use self::uci::Serializable;
 pub use self::uci::UciFen;
 pub use self::uci::UciMessage;
 pub use self::uci::UciMove;
