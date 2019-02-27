@@ -707,19 +707,26 @@ impl Display for UciOptionConfig {
     }
 }
 
-
+/// The representation of various info messages. For an info attribute that is not listed in the protocol specification,
+/// the `UciInfoAttribute::Any(name, value)` variant can be used.
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum UciInfoAttribute {
+    /// The `info depth` message.
     Depth(u8),
 
+    /// The `info seldepth` message.
     SelDepth(u8),
 
+    /// The `info time` message.
     Time(u64),
 
+    /// The `info nodes` message.
     Nodes(u64),
 
+    /// The `info pv` message (best line move sequence).
     Pv(Vec<UciMove>),
 
+    /// The `info pv ... multipv` message (the pv line number in a multi pv sequence).
     MultiPv(u16),
 
     Score {
@@ -756,6 +763,18 @@ pub enum UciInfoAttribute {
 }
 
 impl UciInfoAttribute {
+    /// Create a `UciInfoAttribute::Score` with the `cp` attribute set to the value of the parameter and all other
+    /// fields set to `None`.
+    pub fn from_centipawns(cp: i32) -> UciInfoAttribute {
+        UciInfoAttribute::Score {
+            cp: Some(cp),
+            mate: None,
+            lower_bound: None,
+            upper_bound: None,
+        }
+    }
+
+    /// Return the name of the info attribute.
     pub fn get_name(&self) -> &str {
         match self {
             UciInfoAttribute::Depth(..) => "depth",
@@ -781,6 +800,7 @@ impl UciInfoAttribute {
 }
 
 impl Serializable for UciInfoAttribute {
+    /// Return the attribute serialized as a String.
     fn serialize(&self) -> String {
         let mut s = format!("{}", self.get_name());
         match self {
@@ -791,7 +811,7 @@ impl Serializable for UciInfoAttribute {
             UciInfoAttribute::Pv(moves) | UciInfoAttribute::Refutation(moves) => {
                 if !moves.is_empty() {
                     for m in moves {
-                        s += format!(" {} ", m).as_str();
+                        s += format!(" {}", m).as_str();
                     }
                 }
             },
@@ -825,7 +845,7 @@ impl Serializable for UciInfoAttribute {
 
                 if !moves.is_empty() {
                     for m in moves {
-                        s += &format!(" {} ", m);
+                        s += &format!(" {}", m);
                     }
                 }
             },
@@ -1121,5 +1141,75 @@ mod tests {
         });
 
         assert_eq!(m.serialize(), "option name Clear Hash type button");
+    }
+
+    #[test]
+    fn test_serialize_info_depth() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Depth(24)
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info depth 24");
+    }
+
+    #[test]
+    fn test_serialize_info_seldepth() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Depth(22),
+            UciInfoAttribute::SelDepth(17)
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info depth 22 seldepth 17");
+    }
+
+    // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
+    #[test]
+    fn test_serialize_info_pv() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Depth(2),
+            UciInfoAttribute::from_centipawns(214),
+            UciInfoAttribute::Time(1242),
+            UciInfoAttribute::Nodes(2124),
+            UciInfoAttribute::Nps(34928),
+            UciInfoAttribute::Pv(vec![
+                UciMove::from_to(UciSquare::from('e', 2), UciSquare::from('e', 4)),
+                UciMove::from_to(UciSquare::from('e', 7), UciSquare::from('e', 5)),
+                UciMove::from_to(UciSquare::from('g', 1), UciSquare::from('f', 3)),
+            ])
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3");
+    }
+
+    // info depth 5 seldepth 5 multipv 1 score cp -5 nodes 1540 nps 54 tbhits 0 time 28098 pv a8b6 e3b6 b1b6 a5a7 e2e3
+    #[test]
+    fn test_serialize_info_multipv() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Depth(5),
+            UciInfoAttribute::SelDepth(5),
+            UciInfoAttribute::MultiPv(1),
+            UciInfoAttribute::from_centipawns(-5),
+            UciInfoAttribute::Nodes(1540),
+            UciInfoAttribute::Nps(54),
+            UciInfoAttribute::TbHits(0),
+            UciInfoAttribute::Time(28098),
+            UciInfoAttribute::Pv(vec![
+                UciMove::from_to(UciSquare::from('a', 8), UciSquare::from('b', 6)),
+                UciMove::from_to(UciSquare::from('e', 3), UciSquare::from('b', 6)),
+                UciMove::from_to(UciSquare::from('b', 1), UciSquare::from('b', 6)),
+                UciMove::from_to(UciSquare::from('a', 5), UciSquare::from('a', 7)),
+                UciMove::from_to(UciSquare::from('e', 2), UciSquare::from('e', 3)),
+            ])
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info depth 5 seldepth 5 multipv 1 score cp -5 nodes 1540 nps 54 tbhits 0 time 28098 pv a8b6 e3b6 b1b6 a5a7 e2e3");
     }
 }
