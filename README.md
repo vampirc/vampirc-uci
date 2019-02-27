@@ -1,4 +1,4 @@
-# vampirc-uci [![Build Status](https://travis-ci.org/vampirc/vampirc-uci.svg?branch=master)](https://travis-ci.org/vampirc/vampirc-uci) [![Documentation Status](https://docs.rs/vampirc-uci/badge.svg)](https://docs.rs/vampirc-uci/badge.svg)
+# vampirc-uci [![Build Status](https://travis-ci.org/vampirc/vampirc-uci.svg?branch=master)](https://travis-ci.org/vampirc/vampirc-uci) [![Documentation Status](https://docs.rs/vampirc-uci/badge.svg)](https://docs.rs/vampirc-uci)
 
 Vampirc UCI is a [Universal Chess Interface (UCI) protocol](https://en.wikipedia.org/wiki/Universal_Chess_Interface) parser and
 serializer. 
@@ -84,7 +84,7 @@ for m in messages {
 
 ## API
 
-The full API documentation is available at [crates.io](https://docs.rs/vampirc-uci/0.6.0/vampirc_uci/).
+The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
 ## Limitations
 
