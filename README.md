@@ -115,4 +115,5 @@ Since 0.6.0, it does, however, support representation and serialization of all t
 * `copyprotection`
 * `registration`
 * `option`
+* `info`
 
