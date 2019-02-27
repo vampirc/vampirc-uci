@@ -729,13 +729,22 @@ pub enum UciInfoAttribute {
     /// The `info pv ... multipv` message (the pv line number in a multi pv sequence).
     MultiPv(u16),
 
+    /// The `info score ...` message.
     Score {
+        /// The score in centipawns.
         cp: Option<i32>,
+
+        /// Mate coming up in this many moves. Negative value means the engine is getting mated.
         mate: Option<i8>,
+
+        /// The value sent is the lower bound.
         lower_bound: Option<bool>,
+
+        /// The value sent is the upper bound.
         upper_bound: Option<bool>,
     },
 
+    /// The `info currmove` message (current move).
     CurrMove(UciMove),
 
     CurrMoveNum(u16),
@@ -763,7 +772,7 @@ pub enum UciInfoAttribute {
 }
 
 impl UciInfoAttribute {
-    /// Create a `UciInfoAttribute::Score` with the `cp` attribute set to the value of the parameter and all other
+    /// Creates a `UciInfoAttribute::Score` with the `cp` attribute set to the value of the parameter and all other
     /// fields set to `None`.
     pub fn from_centipawns(cp: i32) -> UciInfoAttribute {
         UciInfoAttribute::Score {
@@ -774,7 +783,18 @@ impl UciInfoAttribute {
         }
     }
 
-    /// Return the name of the info attribute.
+    /// Creates a `UciInfoAttribute::Score` with the `mate` attribute set to the value of the parameter and all other
+    /// fields set to `None`. A negative value indicates it is the engine that is getting mated.
+    pub fn from_mate(mate: i8) -> UciInfoAttribute {
+        UciInfoAttribute::Score {
+            cp: None,
+            mate: Some(mate),
+            lower_bound: None,
+            upper_bound: None,
+        }
+    }
+
+    /// Returns the name of the info attribute.
     pub fn get_name(&self) -> &str {
         match self {
             UciInfoAttribute::Depth(..) => "depth",
@@ -800,7 +820,7 @@ impl UciInfoAttribute {
 }
 
 impl Serializable for UciInfoAttribute {
-    /// Return the attribute serialized as a String.
+    /// Returns the attribute serialized as a String.
     fn serialize(&self) -> String {
         let mut s = format!("{}", self.get_name());
         match self {
@@ -1211,5 +1231,66 @@ mod tests {
         let m = UciMessage::Info(attributes);
 
         assert_eq!(m.serialize(), "info depth 5 seldepth 5 multipv 1 score cp -5 nodes 1540 nps 54 tbhits 0 time 28098 pv a8b6 e3b6 b1b6 a5a7 e2e3");
+    }
+
+    #[test]
+    fn test_serialize_info_score() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Score {
+                cp: Some(817),
+                mate: None,
+                upper_bound: Some(true),
+                lower_bound: None,
+            }
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info score cp 817 upperbound");
+    }
+
+    #[test]
+    fn test_serialize_info_score_mate_in_three() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Score {
+                cp: None,
+                mate: Some(-3),
+                upper_bound: None,
+                lower_bound: None,
+            }
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info score mate -3");
+    }
+
+    #[test]
+    fn test_serialize_info_currmove() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrMove(UciMove::from_to(
+                UciSquare::from('a', 5),
+                UciSquare::from('c', 3),
+            ))
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info currmove a5c3");
+    }
+
+    #[test]
+    fn test_serialize_info_currmovenum() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrMove(UciMove::from_to(
+                UciSquare::from('a', 2),
+                UciSquare::from('f', 2),
+            )),
+            UciInfoAttribute::CurrMoveNum(2)
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info currmove a2f2 currmovenum 2");
     }
 }
