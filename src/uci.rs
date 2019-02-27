@@ -4,7 +4,6 @@
 //! construct them in code and then print them to the standard output to communicate with the GUI.
 
 
-use std::error::Error;
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
@@ -1069,8 +1068,6 @@ pub type MessageList = Vec<UciMessage>;
 
 #[cfg(test)]
 mod tests {
-    use crate::uci::UciMessage::CopyProtection;
-
     use super::*;
 
     #[test]

@@ -11,7 +11,6 @@ use pest::iterators::Pair;
 use pest::Parser;
 
 use crate::uci::{MessageList, UciFen, UciMessage, UciMove, UciPiece, UciSearchControl, UciSquare, UciTimeControl};
-use crate::uci::UciMessage::Uci;
 
 #[derive(Parser)]
 #[grammar = "../res/uci.pest"]
