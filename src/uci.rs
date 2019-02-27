@@ -747,27 +747,41 @@ pub enum UciInfoAttribute {
     /// The `info currmove` message (current move).
     CurrMove(UciMove),
 
+    /// The `info currmovenum` message (current move number).
     CurrMoveNum(u16),
 
+    /// The `info hashfull` message (the occupancy of hashing tables in permills).
     HashFull(u16),
 
+    /// The `info nps` message (nodes per second).
     Nps(u64),
 
+    /// The `info tbhits` message (end-game table-base hits).
     TbHits(u64),
 
+    /// The `info sbhits` message (I guess some Shredder-specific end-game table-base stuff. I dunno, probably best to
+    /// ignore).
     SbHits(u64),
 
+    /// The `info cpuload` message (CPU load in permills).
     CpuLoad(u16),
 
+    /// The `info string` message (a string the GUI should display).
     String(String),
 
+    /// The `info refutation` message (the first move is the move being refuted).
     Refutation(Vec<UciMove>),
 
+    /// The `info currline` message (current line being calculated on a CPU).
     CurrLine {
+        /// The CPU number calculating this line.
         cpu_nr: Option<u16>,
-        moves: Vec<UciMove>,
+
+        /// The line being calculated.
+        line: Vec<UciMove>,
     },
 
+    /// Any other info line in the format `(name, value)`.
     Any(String, String),
 }
 
@@ -857,20 +871,20 @@ impl Serializable for UciInfoAttribute {
             UciInfoAttribute::Nps(nps) => s += &format!(" {}", *nps),
             UciInfoAttribute::TbHits(hits) | UciInfoAttribute::SbHits(hits) => s += &format!(" {}", *hits),
             UciInfoAttribute::CpuLoad(load) => s += &format!(" {}", *load),
-            UciInfoAttribute::String(string) => s += string,
-            UciInfoAttribute::CurrLine { cpu_nr, moves } => {
+            UciInfoAttribute::String(string) => s += &format!(" {}", string),
+            UciInfoAttribute::CurrLine { cpu_nr, line } => {
                 if let Some(c) = cpu_nr {
-                    s += &format!(" cpunr {} ", *c);
+                    s += &format!(" cpunr {}", *c);
                 }
 
-                if !moves.is_empty() {
-                    for m in moves {
+                if !line.is_empty() {
+                    for m in line {
                         s += &format!(" {}", m);
                     }
                 }
             },
-            UciInfoAttribute::Any(name, value) => {
-                s += &format!("{} {}", name, value);
+            UciInfoAttribute::Any(_, value) => {
+                s += &format!(" {}", value);
             }
         }
 
@@ -1292,5 +1306,115 @@ mod tests {
         let m = UciMessage::Info(attributes);
 
         assert_eq!(m.serialize(), "info currmove a2f2 currmovenum 2");
+    }
+
+    #[test]
+    fn test_serialize_info_hashfull() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::HashFull(455)
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info hashfull 455");
+    }
+
+    #[test]
+    fn test_serialize_info_nps() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Nps(5098)
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info nps 5098");
+    }
+
+    #[test]
+    fn test_serialize_info_tbhits_nbhits() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::TbHits(987),
+            UciInfoAttribute::SbHits(409),
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info tbhits 987 sbhits 409");
+    }
+
+    #[test]
+    fn test_serialize_info_cpuload() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CpuLoad(823)
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info cpuload 823");
+    }
+
+    #[test]
+    fn test_serialize_info_string() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::String(String::from("Invalid move: d6e1 - violates chess rules"))
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info string Invalid move: d6e1 - violates chess rules");
+    }
+
+    #[test]
+    fn test_serialize_info_refutation() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Refutation(vec![
+                UciMove::from_to(
+                    UciSquare::from('d', 1),
+                    UciSquare::from('h', 5),
+                ),
+                UciMove::from_to(
+                    UciSquare::from('g', 6),
+                    UciSquare::from('h', 5),
+                )
+            ])
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info refutation d1h5 g6h5");
+    }
+
+    #[test]
+    fn test_serialize_info_currline() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrLine {
+                cpu_nr: Some(1),
+                line: vec![
+                    UciMove::from_to(
+                        UciSquare::from('d', 1),
+                        UciSquare::from('h', 5),
+                    ),
+                    UciMove::from_to(
+                        UciSquare::from('g', 6),
+                        UciSquare::from('h', 5),
+                    )
+                ],
+            }
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info currline cpunr 1 d1h5 g6h5");
+    }
+
+    #[test]
+    fn test_serialize_info_any() {
+        let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Any(String::from("other"), String::from("Some other message."))
+        ];
+
+        let m = UciMessage::Info(attributes);
+
+        assert_eq!(m.serialize(), "info other Some other message.");
     }
 }
