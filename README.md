@@ -1,9 +1,9 @@
-# vampirc-uci [![Build Status](https://travis-ci.org/vampirc/vampirc-uci.svg?branch=master)](https://travis-ci.org/vampirc/vampirc-uci)
+# vampirc-uci [![Build Status](https://travis-ci.org/vampirc/vampirc-uci.svg?branch=master)](https://travis-ci.org/vampirc/vampirc-uci) [![Documentation Status](https://docs.rs/vampirc-uci/badge.svg)](https://docs.rs/vampirc-uci/badge.svg)
 
 Vampirc UCI is a [Universal Chess Interface (UCI) protocol](https://en.wikipedia.org/wiki/Universal_Chess_Interface) parser and
 serializer. 
 
-The UCI protocol is a way for a chess engine to communicate with a chessboard GUI, such as [Arena](http://www.playwitharena.com/).
+The UCI protocol is a way for a chess engine to communicate with a chessboard GUI, such as [Cute Chess](https://github.com/cutechess/cutechess).
 
 The [Vampirc Project](https://vampirc.kejzar.si) is a chess engine and chess library suite, written in Rust. It is named for the
 Slovenian grandmaster [Vasja Pirc](https://en.wikipedia.org/wiki/Vasja_Pirc), and, I guess, vampires? I dunno.
@@ -17,7 +17,7 @@ To use the crate, declare a dependency on it in your Cargo.toml file:
 
 ```toml
 [dependencies]
-vampire_uci = "0.5"
+vampire_uci = "0.6"
 
 ```
 
@@ -34,7 +34,7 @@ use vampirc_uci::parse;
 2. Some other useful imports (for message representation):
 
 ```rust
-use vampirc_uci::{UciMessage, MessageList, UciTimeControl};
+use vampirc_uci::{UciMessage, MessageList, UciTimeControl, Serializable};
 ```
 
 3. Parse some input:
@@ -72,17 +72,23 @@ for m in messages {
 5. Outputting the messages
 
 ```rust
-    let msg = UciMessage::Debug(true);
-    println!("{}", msg); // Outputs the "debug true" command
+    let message = UciMessage::Option(UciOptionConfig::Spin {
+                name: "Selectivity".to_string(),
+                default: Some(2),
+                min: Some(0),
+                max: Some(4),
+            });
+    
+    println!(message); // Outputs "option name Selectivity type spin default 2 min 0 max 4"
 ```
 
 ## API
 
-The full API documentation is available at [crates.io](https://docs.rs/vampirc-uci/0.5.0/vampirc_uci/).
+The full API documentation is available at [crates.io](https://docs.rs/vampirc-uci/0.6.0/vampirc_uci/).
 
 ## Limitations
 
-The current version 0.5.x only supports the parsing of engine–bound messages. These include:
+The current version 0.6.x only supports the parsing of engine–bound messages. These include:
 * `uci`
 * `debug`
 * `isready`
@@ -96,4 +102,13 @@ The current version 0.5.x only supports the parsing of engine–bound messages. 
 * `go`
 
 Support for the rest is coming up.
+
+Since 0.6.0, it does, however, support representation and serialization of all the GUI-bound messages:
+* `id`
+* `uciok`
+* `readyok`
+* `bestmove`
+* `copyprotection`
+* `registration`
+* `option`
 

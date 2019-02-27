@@ -1,7 +1,7 @@
 //! The `uci` module contains the definitions that represent UCI protocol messages.
 //!
 //! Usually, these messages will be obtained by calling the `parse` method of the `parser` module, but you can always
-//! construct them in code and then print them to the standard output to communicate with the engine or GUI.
+//! construct them in code and then print them to the standard output to communicate with the GUI.
 
 
 use std::error::Error;
@@ -1089,9 +1089,8 @@ mod tests {
     }
 
     #[test]
-    // TODO change to zh
     fn test_serialize_id_author() {
-        assert_eq!(UciMessage::id_author("Matija Kejzar").serialize().as_str(), "id author Matija Kejzar");
+        assert_eq!(UciMessage::id_author("Matija Kejžar").serialize().as_str(), "id author Matija Kejžar");
     }
 
     #[test]
