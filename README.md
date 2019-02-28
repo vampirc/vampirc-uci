@@ -17,7 +17,7 @@ To use the crate, declare a dependency on it in your Cargo.toml file:
 
 ```toml
 [dependencies]
-vampirc_uci = "0.6"
+vampirc-uci = "0.6"
 ```
 
 Then reference the `vampirc_uci` crate in your crate root:
