@@ -5,7 +5,7 @@ commands = _{ SOI ~ ws_nl* ~ message+ ~ !any}
 commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* }
 
 message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit |
-            position | go) ~ WHITESPACE* ~ NEWLINE+}
+            position | go | id | uciok | readyok) ~ WHITESPACE* ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
 
@@ -79,6 +79,19 @@ depth = ${ ^"depth" ~WHITESPACE+ ~ digits3 }
 nodes = ${ ^"nodes" ~WHITESPACE+ ~ digits12 }
 mate = ${ ^"mate" ~WHITESPACE+ ~ digits3 }
 searchmoves = ${ ^"searchmoves" ~ (WHITESPACE+ ~ a_move)+ }
+
+// GUI-bound stuff
+
+// id
+id = ${ ^"id" ~ WHITESPACE+ ~ (id_name|id_author) }
+id_name = ${ ^"name" ~ WHITESPACE+ ~ id_text }
+id_author = ${ ^"author" ~ WHITESPACE+ ~ id_text }
+id_text = ${ any+ }
+
+uciok = { ^"uciok" }
+
+readyok = { ^"readyok" }
+
 
 milliseconds = { digit{1,12} }
 digits3 = { digit{1,3} }

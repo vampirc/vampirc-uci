@@ -259,7 +259,22 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                         time_control,
                         search_control,
                     }
-                }
+                },
+                Rule::id => {
+                    for sp in pair.into_inner() {
+                        let id_rule: Rule = sp.as_rule();
+                        match id_rule {
+                            Rule::id_name | Rule::id_author => {
+                                return parse_id_text(sp, id_rule);
+                            },
+                            _ => {}
+                        }
+                    }
+
+                    unreachable!()
+                },
+                Rule::uciok => UciMessage::UciOk,
+                Rule::readyok => UciMessage::ReadyOk,
                 _ => unreachable!()
             }
         })
@@ -268,6 +283,34 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
 
 
     Ok(ml)
+}
+
+fn parse_id_text(id_pair: Pair<Rule>, rule: Rule) -> UciMessage {
+    for sp in id_pair.into_inner() {
+        match sp.as_rule() {
+            Rule::id_text => {
+                let text = sp.as_span().as_str();
+                match rule {
+                    Rule::id_name => {
+                        return UciMessage::Id {
+                            name: Some(String::from(text)),
+                            author: None,
+                        };
+                    },
+                    Rule::id_author => {
+                        return UciMessage::Id {
+                            author: Some(String::from(text)),
+                            name: None,
+                        };
+                    },
+                    _ => unreachable!()
+                }
+            },
+            _ => {}
+        }
+    }
+
+    unreachable!();
 }
 
 fn parse_square(sq_pair: Pair<Rule>) -> UciSquare {
@@ -811,5 +854,41 @@ mod tests {
     #[should_panic]
     fn test_strict_mode() {
         parse_strict("position startpos\nunknown command\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
+    }
+
+    #[test]
+    fn test_id() {
+        let ml = parse_strict("id name Vampirc 1.0\nid    author    Matija Kejžar\n").unwrap();
+        assert_eq!(ml.len(), 2);
+
+        let result = UciMessage::Id {
+            name: Some("Vampirc 1.0".to_string()),
+            author: None,
+        };
+
+        assert_eq!(ml[0], result);
+
+        let result2 = UciMessage::Id {
+            author: Some("Matija Kejžar".to_string()),
+            name: None,
+        };
+
+        assert_eq!(ml[1], result2);
+    }
+
+    #[test]
+    fn test_uciok() {
+        let ml = parse_strict("uci\n    uciok    \r\n").unwrap();
+        assert_eq!(ml.len(), 2);
+        assert_eq!(ml[0], UciMessage::Uci);
+        assert_eq!(ml[1], UciMessage::UciOk);
+    }
+
+    #[test]
+    fn test_readyok() {
+        let ml = parse_strict("isready\nreadyok\n").unwrap();
+        assert_eq!(ml.len(), 2);
+        assert_eq!(ml[0], UciMessage::IsReady);
+        assert_eq!(ml[1], UciMessage::ReadyOk);
     }
 }
