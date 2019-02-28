@@ -5,7 +5,7 @@ commands = _{ SOI ~ ws_nl* ~ message+ ~ !any}
 commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* }
 
 message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit |
-            position | go | id | uciok | readyok) ~ WHITESPACE* ~ NEWLINE+}
+            position | go | id | uciok | readyok | bestmove | copyprotection | registration) ~ WHITESPACE* ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
 
@@ -91,6 +91,15 @@ id_text = ${ any+ }
 uciok = { ^"uciok" }
 
 readyok = { ^"readyok" }
+
+bestmove = ${ ^"bestmove" ~ WHITESPACE+ ~ a_move ~ (WHITESPACE+ | bestmove_ponder)* }
+bestmove_ponder = ${ ^"ponder" ~ WHITESPACE+ ~ a_move }
+
+copyprotection = ${ ^"copyprotection" ~ WHITESPACE+ ~ (protection_checking | protection_ok | protection_error) }
+registration = ${ ^"registration" ~ WHITESPACE+ ~ (protection_checking | protection_ok | protection_error) }
+protection_checking = { ^"checking" }
+protection_ok = { ^"ok" }
+protection_error = { ^"error" }
 
 
 milliseconds = { digit{1,12} }
