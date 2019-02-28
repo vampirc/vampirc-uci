@@ -27,9 +27,9 @@ extern crate vampirc_uci;
 
 ## Usage
 
-1. Import either the `parse(..)` method or the `parse_strict(..)` method. The difference between them that is that `parse_strict(..)`
-will return an `pest::error::Error` if any of the input is unrecognized or violates the rules of the PEG grammar, whereas `parse`
-simply ignores it. The latter is the approach recommended by the protocol specification.
+1. Import either the `parse(..)` method or the `parse_strict(..)` method. The difference between them is that `parse_strict(..)`
+will return a `pest::error::Error` if any of the input is unrecognized or violates the rules of the PEG grammar, whereas `parse`
+will simply ignore any such input. The latter is the approach recommended by the protocol specification.
 
 ```rust
 use vampirc_uci::parse;
