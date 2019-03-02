@@ -13,7 +13,7 @@ pub enum CommunicationDirection {
     /// An engine-bound message.
     GuiToEngine,
 
-    /// A GUI-bound message
+    /// A GUI-bound message.
     EngineToGui,
 }
 

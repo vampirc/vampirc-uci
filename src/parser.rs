@@ -11,6 +11,7 @@ use pest::iterators::Pair;
 use pest::Parser;
 
 use crate::uci::{MessageList, UciFen, UciMessage, UciMove, UciPiece, UciSearchControl, UciSquare, UciTimeControl};
+use crate::uci::ProtectionState;
 
 #[derive(Parser)]
 #[grammar = "../res/uci.pest"]
@@ -218,13 +219,13 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                     match spi.as_rule() {
                                         Rule::depth => {
                                             search.depth = Some(parse_u8(spi, Rule::digits3));
-                                        },
+                                        }
                                         Rule::mate => {
                                             search.mate = Some(parse_u8(spi, Rule::digits3))
                                         }
                                         Rule::nodes => {
                                             search.nodes = Some(parse_u64(spi, Rule::digits12))
-                                        },
+                                        }
                                         Rule::searchmoves => {
                                             for mt in spi.into_inner() {
                                                 search.search_moves.push(parse_a_move(mt));
@@ -260,6 +261,66 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                         search_control,
                     }
                 }
+                Rule::id => {
+                    for sp in pair.into_inner() {
+                        let id_rule: Rule = sp.as_rule();
+                        match id_rule {
+                            Rule::id_name | Rule::id_author => {
+                                return parse_id_text(sp, id_rule);
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    unreachable!()
+                }
+                Rule::uciok => UciMessage::UciOk,
+                Rule::readyok => UciMessage::ReadyOk,
+                Rule::bestmove => {
+                    let mut bm: Option<UciMove> = None;
+                    let mut ponder: Option<UciMove> = None;
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::a_move => {
+                                bm = Some(parse_a_move(sp));
+                            }
+                            Rule::bestmove_ponder => {
+                                for ssp in sp.into_inner() {
+                                    match ssp.as_rule() {
+                                        Rule::a_move => {
+                                            ponder = Some(parse_a_move(ssp))
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    UciMessage::BestMove {
+                        best_move: bm.unwrap(),
+                        ponder,
+                    }
+                }
+                Rule::copyprotection | Rule::registration => {
+                    let mut ps: Option<ProtectionState> = None;
+                    let pc = pair.clone();
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::protection_checking => ps = Some(ProtectionState::Checking),
+                            Rule::protection_ok => ps = Some(ProtectionState::Ok),
+                            Rule::protection_error => ps = Some(ProtectionState::Error),
+                            _ => {}
+                        }
+                    }
+
+                    if pc.as_rule() == Rule::copyprotection {
+                        UciMessage::CopyProtection(ps.unwrap())
+                    } else {
+                        UciMessage::Registration(ps.unwrap())
+                    }
+                }
                 _ => unreachable!()
             }
         })
@@ -268,6 +329,34 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
 
 
     Ok(ml)
+}
+
+fn parse_id_text(id_pair: Pair<Rule>, rule: Rule) -> UciMessage {
+    for sp in id_pair.into_inner() {
+        match sp.as_rule() {
+            Rule::id_text => {
+                let text = sp.as_span().as_str();
+                match rule {
+                    Rule::id_name => {
+                        return UciMessage::Id {
+                            name: Some(String::from(text)),
+                            author: None,
+                        };
+                    }
+                    Rule::id_author => {
+                        return UciMessage::Id {
+                            author: Some(String::from(text)),
+                            name: None,
+                        };
+                    }
+                    _ => unreachable!()
+                }
+            }
+            _ => {}
+        }
+    }
+
+    unreachable!();
 }
 
 fn parse_square(sq_pair: Pair<Rule>) -> UciSquare {
@@ -797,12 +886,12 @@ mod tests {
         assert_eq!(ml.len(), 2);
 
         match ml[0] {
-            UciMessage::Position { .. } => {},
+            UciMessage::Position { .. } => {}
             _ => panic!("Expected a `position` message here")
         };
 
         match ml[1] {
-            UciMessage::Go { .. } => {},
+            UciMessage::Go { .. } => {}
             _ => panic!("Expected a `go` message here")
         };
     }
@@ -811,5 +900,103 @@ mod tests {
     #[should_panic]
     fn test_strict_mode() {
         parse_strict("position startpos\nunknown command\ngo ponder searchmoves e2e4 d2d4\n").unwrap();
+    }
+
+    #[test]
+    fn test_id() {
+        let ml = parse_strict("id name Vampirc 1.0\nid    author    Matija Kejžar\n").unwrap();
+        assert_eq!(ml.len(), 2);
+
+        let result = UciMessage::Id {
+            name: Some("Vampirc 1.0".to_string()),
+            author: None,
+        };
+
+        assert_eq!(ml[0], result);
+
+        let result2 = UciMessage::Id {
+            author: Some("Matija Kejžar".to_string()),
+            name: None,
+        };
+
+        assert_eq!(ml[1], result2);
+    }
+
+    #[test]
+    fn test_uciok() {
+        let ml = parse_strict("uci\n    uciok    \r\n").unwrap();
+        assert_eq!(ml.len(), 2);
+        assert_eq!(ml[0], UciMessage::Uci);
+        assert_eq!(ml[1], UciMessage::UciOk);
+    }
+
+    #[test]
+    fn test_readyok() {
+        let ml = parse_strict("isready\nreadyok\n").unwrap();
+        assert_eq!(ml.len(), 2);
+        assert_eq!(ml[0], UciMessage::IsReady);
+        assert_eq!(ml[1], UciMessage::ReadyOk);
+    }
+
+    // bestmove g1f3
+
+    #[test]
+    fn test_bestmove() {
+        let ml = parse_strict("bestmove  g1f3\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+
+        let m = UciMessage::BestMove {
+            best_move: UciMove {
+                from: UciSquare::from('g', 1),
+                to: UciSquare::from('f', 3),
+                promotion: None,
+            },
+
+            ponder: None,
+        };
+
+        assert_eq!(ml[0], m);
+    }
+
+    // bestmove g1f3 ponder d8f6
+
+    #[test]
+    fn test_bestmove_with_ponder() {
+        let ml = parse_strict("bestmove g1f3 ponder d8f6\n").unwrap();
+        assert_eq!(ml.len(), 1);
+
+
+        let m = UciMessage::BestMove {
+            best_move: UciMove {
+                from: UciSquare::from('g', 1),
+                to: UciSquare::from('f', 3),
+                promotion: None,
+            },
+
+            ponder: Some(UciMove {
+                from: UciSquare::from('d', 8),
+                to: UciSquare::from('f', 6),
+                promotion: None,
+            }),
+        };
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_copyprotection() {
+        let ml = parse_strict("copyprotection checking\ncopyprotection   ok\n").unwrap();
+        assert_eq!(ml.len(), 2);
+        assert_eq!(ml[0], UciMessage::CopyProtection(ProtectionState::Checking));
+        assert_eq!(ml[1], UciMessage::CopyProtection(ProtectionState::Ok));
+    }
+
+    #[test]
+    fn test_registration() {
+        let ml = parse_strict("registration   checking\nregistration error\n").unwrap();
+        assert_eq!(ml.len(), 2);
+        assert_eq!(ml[0], UciMessage::Registration(ProtectionState::Checking));
+        assert_eq!(ml[1], UciMessage::Registration(ProtectionState::Error));
     }
 }
