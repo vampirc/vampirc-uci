@@ -92,7 +92,12 @@ The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci
 
 ## Limitations
 
-The current version 0.6.x only supports the parsing of engine–bound messages. These include:
+The current version 0.7.x only supports the parsing of all messages, whether engine- or GUI-bound, with the exception of the two
+most complex GUI-bound messages (`option` and `info`, although it does already support their representation and serialization). 
+Support for these two is coming up in the next release.
+
+### Supported engine-bound messages (100%)
+
 * `uci`
 * `debug`
 * `isready`
@@ -105,15 +110,16 @@ The current version 0.6.x only supports the parsing of engine–bound messages. 
 * `quit`
 * `go`
 
-Support for the rest is coming up.
+### Supported GUI-bound messages
 
-Since 0.6.0, it does, however, support representation and serialization of all the GUI-bound messages:
 * `id`
 * `uciok`
 * `readyok`
 * `bestmove`
 * `copyprotection`
 * `registration`
-* `option`
-* `info`
+* `option`+
+* `info`+
+
+\+ Except for parsing (coming up in 0.8.0).
 
