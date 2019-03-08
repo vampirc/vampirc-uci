@@ -5,7 +5,8 @@ commands = _{ SOI ~ ws_nl* ~ message+ ~ !any}
 commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* }
 
 message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit |
-            position | go | id | uciok | readyok | bestmove | copyprotection | registration) ~ WHITESPACE* ~ NEWLINE+}
+            position | go | id | uciok | readyok | bestmove | copyprotection | registration | option) ~
+            WHITESPACE* ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
 
@@ -101,10 +102,28 @@ protection_checking = { ^"checking" }
 protection_ok = { ^"ok" }
 protection_error = { ^"error" }
 
+// option
+option = ${ ^"option" ~ WHITESPACE+ ~ ^"name" ~ WHITESPACE+ ~ option_name2 ~ WHITESPACE+ ~ ^"type" ~ WHITESPACE+ ~ option_type
+~ (WHITESPACE+ ~ (^"default" ~ WHITESPACE+ ~ option_default)? ~ (WHITESPACE+ ~ ^"min" ~ WHITESPACE+ ~ option_min)? ~
+ (WHITESPACE+ ~ ^"max" ~ WHITESPACE+ ~ option_max)? ~ (WHITESPACE+ ~ ^"var" ~ WHITESPACE+ ~ option_var)*)* }
+option_name2 = ${ !^"type" ~ token ~ (WHITESPACE+ ~ !^"type" ~ token+)* }
+option_type = ${ option_check | option_spin | option_combo | option_string | option_button }
+option_check = { ^"check" }
+option_spin = { ^"spin" }
+option_combo = { ^"combo" }
+option_string = { ^"string" }
+option_button = { ^"button" }
+option_default = {!(^"min" | ^"max" | ^"var") ~ (WHITESPACE+ ~ !(^"min" | ^"max" | ^"var") ~ token+)*}
+option_min = { i64 }
+option_max = { i64 }
+option_var = { !^"var" ~ token ~ (WHITESPACE+ ~ !^"var" ~ token+)* }
+
+
 
 milliseconds = { digit{1,12} }
 digits3 = { digit{1,3} }
 digits12 = { digit{1,12} }
+i64 = { "-"? ~ digits12 }
 
 
 
