@@ -1123,7 +1123,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_option_check() {
+    fn test_parse_option_check() {
         let ml = parse_strict("option name Nullmove type check default true\n").unwrap();
 
         let m = UciMessage::Option(UciOptionConfig::Check {
@@ -1135,7 +1135,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_option_check_no_default() {
+    fn test_parse_option_check_no_default() {
         let ml = parse_strict("option    name   A long option name type  check   \n").unwrap();
 
         let m = UciMessage::Option(UciOptionConfig::Check {
@@ -1147,7 +1147,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_option_spin() {
+    fn test_parse_option_spin() {
         let ml = parse_strict("option name Selectivity type spin default 2 min 0 max 4\n\n").unwrap();
 
         let m = UciMessage::Option(UciOptionConfig::Spin {
@@ -1161,7 +1161,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_option_spin_no_default() {
+    fn test_parse_option_spin_no_default() {
         let ml = parse_strict("option name A spin option without a default type spin min -5676 max -33\n").unwrap();
 
         let m = UciMessage::Option(UciOptionConfig::Spin {
@@ -1175,7 +1175,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_option_spin_just_min() {
+    fn test_parse_option_spin_just_min() {
         let ml = parse_strict("option name JUST MIN type spin min -40964656\n").unwrap();
 
         let m = UciMessage::Option(UciOptionConfig::Spin {
@@ -1189,7 +1189,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_option_spin_just_max() {
+    fn test_parse_option_spin_just_max() {
         let ml = parse_strict("option name just_max type spin max 56565464509\n").unwrap();
 
         let m = UciMessage::Option(UciOptionConfig::Spin {
@@ -1203,7 +1203,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_option_spin_just_default_and_max() {
+    fn test_parse_option_spin_just_default_and_max() {
         let ml = parse_strict("option name def max type spin default -5 max 55\n").unwrap();
 
         let m = UciMessage::Option(UciOptionConfig::Spin {
@@ -1211,6 +1211,78 @@ mod tests {
             default: Some(-5),
             max: Some(55),
             min: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_combo() {
+        let ml = parse_strict("option name Style type combo default Normal var Solid var Normal var Risky\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Combo {
+            name: "Style".to_string(),
+            default: Some("Normal".to_string()),
+            var: vec![String::from("Solid"), String::from("Normal"), String::from("Risky")],
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_combo_no_default() {
+        let ml = parse_strict("option name Some ccccc-combo type combo      var A B C var D E   F var 1 2 3\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Combo {
+            name: "Some ccccc-combo".to_string(),
+            default: None,
+            var: vec![String::from("A B C"), String::from("D E   F"), String::from("1 2 3")],
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_string() {
+        let ml = parse_strict("option name Nalimov Path  type string default c:\\\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::String {
+            name: "Nalimov Path".to_string(),
+            default: Some("c:\\".to_string()),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_string_no_default() {
+        let ml = parse_strict("option name NP type string\r\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::String {
+            name: "NP".to_string(),
+            default: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_button() {
+        let ml = parse_strict("option name Clear Hash type button\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Button {
+            name: "Clear Hash".to_string(),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_button_ignore_default() {
+        let ml = parse_strict("option name CH type button default Ignore min 5 max 6 var A var B\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Button {
+            name: "CH".to_string(),
         });
 
         assert_eq!(ml[0], m);
