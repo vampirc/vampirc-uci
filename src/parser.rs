@@ -405,7 +405,11 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                 UciOptionConfig::Combo {
                                     name: String::from(name.unwrap()),
                                     default: if let Some(def) = opt_default {
-                                        Some(String::from(def))
+                                        if def.eq_ignore_ascii_case("<empty>") {
+                                            Some(String::from(""))
+                                        } else {
+                                            Some(String::from(def))
+                                        }
                                     } else {
                                         None
                                     },
@@ -416,7 +420,11 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                 UciOptionConfig::String {
                                     name: String::from(name.unwrap()),
                                     default: if let Some(def) = opt_default {
-                                        Some(String::from(def))
+                                        if def.eq_ignore_ascii_case("<empty>") {
+                                            Some(String::from(""))
+                                        } else {
+                                            Some(String::from(def))
+                                        }
                                     } else {
                                         None
                                     },
@@ -1283,6 +1291,18 @@ mod tests {
 
         let m = UciMessage::Option(UciOptionConfig::Button {
             name: "CH".to_string(),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_string_empty() {
+        let ml = parse_strict("option name Nalimov Path  type string default <empty>\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::String {
+            name: "Nalimov Path".to_string(),
+            default: Some("".to_string()),
         });
 
         assert_eq!(ml[0], m);
