@@ -324,103 +324,111 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                 }
                 Rule::option => {
                     let mut name: Option<&str> = None;
-                    let mut option_cfg: Option<UciOptionConfig> = None;
                     let mut opt_default: Option<&str> = None;
                     let mut opt_min: Option<i64> = None;
                     let mut opt_max: Option<i64> = None;
                     let mut opt_var: Vec<String> = Vec::default();
+                    let mut type_pair: Option<Pair<Rule>> = None;
 
                     for sp in pair.into_inner() {
                         match sp.as_rule() {
-                            Rule::option_name2 => { name = Some(sp.as_span().as_str()); },
+                            Rule::option_name2 => { name = Some(sp.as_span().as_str()); }
                             Rule::option_type => {
                                 for spi in sp.into_inner() {
                                     match spi.as_rule() {
-                                        Rule::option_check => {
-                                            option_cfg = Some(UciOptionConfig::Check {
-                                                name: String::from(name.unwrap()),
-                                                default: None,
-                                            });
-                                        },
-                                        Rule::option_spin => {
-                                            option_cfg = Some(UciOptionConfig::Spin {
-                                                name: String::from(name.unwrap()),
-                                                default: None,
-                                                min: None,
-                                                max: None,
-                                            })
-                                        },
-                                        Rule::option_combo => {
-                                            option_cfg = Some(UciOptionConfig::Combo {
-                                                name: String::from(name.unwrap()),
-                                                default: None,
-                                                var: Vec::default(),
-                                            });
-                                        },
-                                        Rule::option_string => {
-                                            option_cfg = Some(UciOptionConfig::String {
-                                                name: String::from(name.unwrap()),
-                                                default: None,
-                                            });
-                                        },
+                                        Rule::option_check | Rule::option_spin | Rule::option_combo | Rule::option_string |
                                         Rule::option_button => {
-                                            option_cfg = Some(UciOptionConfig::Button {
-                                                name: String::from(name.unwrap())
-                                            });
-                                        },
-                                        _ => unreachable!()
+                                            type_pair = Some(spi);
+                                        }
+                                        _ => {}
                                     }
                                 }
-                            },
+                            }
                             Rule::option_default => {
                                 opt_default = Some(sp.as_span().as_str());
-                            },
+                            }
                             Rule::option_min => {
                                 opt_min = Some(parse_i64(sp, Rule::i64));
-                            },
+                            }
                             Rule::option_max => {
                                 opt_max = Some(parse_i64(sp, Rule::i64));
-                            },
+                            }
                             Rule::option_var => {
                                 opt_var.push(String::from(sp.as_span().as_str()));
-                            },
+                            }
                             _ => unreachable!()
                         }
                     }
 
-                    let mut uoc = option_cfg.unwrap();
+                    let uoc: UciOptionConfig =
 
-                    match uoc {
-                        UciOptionConfig::Check { mut default, .. } => {
-                            if let Some(def) = opt_default {
-                                default = match def.to_lowercase().as_str() {
-                                    "true" => Some(true),
-                                    "false" => Some(false),
-                                    _ => None
+                        match type_pair.unwrap().as_rule() {
+                            Rule::option_check => {
+                                UciOptionConfig::Check {
+                                    name: String::from(name.unwrap()),
+                                    default: if let Some(def) = opt_default {
+                                        match def.to_lowercase().as_str() {
+                                            "true" => Some(true),
+                                            "false" => Some(false),
+                                            _ => None
+                                        }
+                                    } else {
+                                        None
+                                    },
                                 }
                             }
-                        },
-                        UciOptionConfig::Spin { mut default, mut min, mut max, .. } => {
-                            if let Some(def) = opt_default {
-                                default = Some(str::parse::<i64>(def).unwrap());
-                            }
-
-                            if let Some(min1) = opt_min {
-                                min = Some(min1);
-                            }
-
-                            if let Some(max1) = opt_max {
-                                max = Some(max1);
-                            }
-                        },
-//                        UciOptionConfig::Combo { mut default, mut var, .. } => {
-//                            if let Some(def) = opt_default {
-//                                default = Some(String::from(def));
-//                                var = opt_var;
-//                            }
-//                        },
-                        _ => {}
-                    }
+                            Rule::option_spin => {
+                                UciOptionConfig::Spin {
+                                    name: String::from(name.unwrap()),
+                                    default: if let Some(def) = opt_default {
+                                        if let Ok(def_i64) = str::parse::<i64>(def) {
+                                            Some(def_i64)
+                                        } else {
+                                            None
+                                        }
+                                    } else {
+                                        None
+                                    },
+                                    min: if let Some(min1) = opt_min {
+                                        Some(min1)
+                                    } else {
+                                        None
+                                    },
+                                    max: if let Some(max1) = opt_max {
+                                        Some(max1)
+                                    } else {
+                                        None
+                                    },
+                                }
+                            },
+                            Rule::option_combo => {
+                                UciOptionConfig::Combo {
+                                    name: String::from(name.unwrap()),
+                                    default: if let Some(def) = opt_default {
+                                        Some(String::from(def))
+                                    } else {
+                                        None
+                                    },
+                                    var: opt_var,
+                                }
+                            },
+                            Rule::option_string => {
+                                UciOptionConfig::String {
+                                    name: String::from(name.unwrap()),
+                                    default: if let Some(def) = opt_default {
+                                        Some(String::from(def))
+                                    } else {
+                                        None
+                                    },
+                                }
+                            },
+                            Rule::option_button => {
+                                UciOptionConfig::Button {
+                                    name: String::from(name.unwrap()),
+                                }
+                            },
+                            _ => unreachable!()
+                        };
 
                     UciMessage::Option(uoc)
                 }
