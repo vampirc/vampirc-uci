@@ -12,6 +12,7 @@ use pest::Parser;
 
 use crate::uci::{MessageList, UciFen, UciMessage, UciMove, UciPiece, UciSearchControl, UciSquare, UciTimeControl};
 use crate::uci::ProtectionState;
+use crate::UciOptionConfig;
 
 #[derive(Parser)]
 #[grammar = "../res/uci.pest"]
@@ -321,6 +322,125 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                         UciMessage::Registration(ps.unwrap())
                     }
                 }
+                Rule::option => {
+                    let mut name: Option<&str> = None;
+                    let mut opt_default: Option<&str> = None;
+                    let mut opt_min: Option<i64> = None;
+                    let mut opt_max: Option<i64> = None;
+                    let mut opt_var: Vec<String> = Vec::default();
+                    let mut type_pair: Option<Pair<Rule>> = None;
+
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::option_name2 => { name = Some(sp.as_span().as_str()); }
+                            Rule::option_type => {
+                                for spi in sp.into_inner() {
+                                    match spi.as_rule() {
+                                        Rule::option_check | Rule::option_spin | Rule::option_combo | Rule::option_string |
+                                        Rule::option_button => {
+                                            type_pair = Some(spi);
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            Rule::option_default => {
+                                opt_default = Some(sp.as_span().as_str());
+                            }
+                            Rule::option_min => {
+                                opt_min = Some(parse_i64(sp, Rule::i64));
+                            }
+                            Rule::option_max => {
+                                opt_max = Some(parse_i64(sp, Rule::i64));
+                            }
+                            Rule::option_var => {
+                                opt_var.push(String::from(sp.as_span().as_str()));
+                            }
+                            _ => unreachable!()
+                        }
+                    }
+
+                    let uoc: UciOptionConfig =
+
+                        match type_pair.unwrap().as_rule() {
+                            Rule::option_check => {
+                                UciOptionConfig::Check {
+                                    name: String::from(name.unwrap()),
+                                    default: if let Some(def) = opt_default {
+                                        match def.to_lowercase().as_str() {
+                                            "true" => Some(true),
+                                            "false" => Some(false),
+                                            _ => None
+                                        }
+                                    } else {
+                                        None
+                                    },
+                                }
+                            }
+                            Rule::option_spin => {
+                                UciOptionConfig::Spin {
+                                    name: String::from(name.unwrap()),
+                                    default: if let Some(def) = opt_default {
+                                        if let Ok(def_i64) = str::parse::<i64>(def) {
+                                            Some(def_i64)
+                                        } else {
+                                            None
+                                        }
+                                    } else {
+                                        None
+                                    },
+                                    min: if let Some(min1) = opt_min {
+                                        Some(min1)
+                                    } else {
+                                        None
+                                    },
+                                    max: if let Some(max1) = opt_max {
+                                        Some(max1)
+                                    } else {
+                                        None
+                                    },
+                                }
+                            },
+                            Rule::option_combo => {
+                                UciOptionConfig::Combo {
+                                    name: String::from(name.unwrap()),
+                                    default: if let Some(def) = opt_default {
+                                        if def.eq_ignore_ascii_case("<empty>") {
+                                            Some(String::from(""))
+                                        } else {
+                                            Some(String::from(def))
+                                        }
+                                    } else {
+                                        None
+                                    },
+                                    var: opt_var,
+                                }
+                            },
+                            Rule::option_string => {
+                                UciOptionConfig::String {
+                                    name: String::from(name.unwrap()),
+                                    default: if let Some(def) = opt_default {
+                                        if def.eq_ignore_ascii_case("<empty>") {
+                                            Some(String::from(""))
+                                        } else {
+                                            Some(String::from(def))
+                                        }
+                                    } else {
+                                        None
+                                    },
+                                }
+                            },
+                            Rule::option_button => {
+                                UciOptionConfig::Button {
+                                    name: String::from(name.unwrap()),
+                                }
+                            },
+                            _ => unreachable!()
+                        };
+
+                    UciMessage::Option(uoc)
+                }
+
                 _ => unreachable!()
             }
         })
@@ -406,6 +526,16 @@ fn parse_u64(pair: Pair<Rule>, rule: Rule) -> u64 {
     for sp in pair.into_inner() {
         if sp.as_rule() == rule {
             return str::parse::<u64>(sp.as_span().as_str()).unwrap();
+        }
+    }
+
+    0
+}
+
+fn parse_i64(pair: Pair<Rule>, rule: Rule) -> i64 {
+    for sp in pair.into_inner() {
+        if sp.as_rule() == rule {
+            return str::parse::<i64>(sp.as_span().as_str()).unwrap();
         }
     }
 
@@ -998,5 +1128,183 @@ mod tests {
         assert_eq!(ml.len(), 2);
         assert_eq!(ml[0], UciMessage::Registration(ProtectionState::Checking));
         assert_eq!(ml[1], UciMessage::Registration(ProtectionState::Error));
+    }
+
+    #[test]
+    fn test_parse_option_check() {
+        let ml = parse_strict("option name Nullmove type check default true\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Check {
+            name: "Nullmove".to_string(),
+            default: Some(true),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_check_no_default() {
+        let ml = parse_strict("option    name   A long option name type  check   \n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Check {
+            name: "A long option name".to_string(),
+            default: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_spin() {
+        let ml = parse_strict("option name Selectivity type spin default 2 min 0 max 4\n\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "Selectivity".to_string(),
+            default: Some(2),
+            min: Some(0),
+            max: Some(4),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_spin_no_default() {
+        let ml = parse_strict("option name A spin option without a default type spin min -5676 max -33\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "A spin option without a default".to_string(),
+            default: None,
+            min: Some(-5676),
+            max: Some(-33),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_spin_just_min() {
+        let ml = parse_strict("option name JUST MIN type spin min -40964656\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "JUST MIN".to_string(),
+            default: None,
+            min: Some(-40964656),
+            max: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_spin_just_max() {
+        let ml = parse_strict("option name just_max type spin max 56565464509\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "just_max".to_string(),
+            default: None,
+            max: Some(56565464509),
+            min: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_spin_just_default_and_max() {
+        let ml = parse_strict("option name def max type spin default -5 max 55\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "def max".to_string(),
+            default: Some(-5),
+            max: Some(55),
+            min: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_combo() {
+        let ml = parse_strict("option name Style type combo default Normal var Solid var Normal var Risky\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Combo {
+            name: "Style".to_string(),
+            default: Some("Normal".to_string()),
+            var: vec![String::from("Solid"), String::from("Normal"), String::from("Risky")],
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_combo_no_default() {
+        let ml = parse_strict("option name Some ccccc-combo type combo      var A B C var D E   F var 1 2 3\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Combo {
+            name: "Some ccccc-combo".to_string(),
+            default: None,
+            var: vec![String::from("A B C"), String::from("D E   F"), String::from("1 2 3")],
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_string() {
+        let ml = parse_strict("option name Nalimov Path  type string default c:\\\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::String {
+            name: "Nalimov Path".to_string(),
+            default: Some("c:\\".to_string()),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_string_no_default() {
+        let ml = parse_strict("option name NP type string\r\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::String {
+            name: "NP".to_string(),
+            default: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_button() {
+        let ml = parse_strict("option name Clear Hash type button\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Button {
+            name: "Clear Hash".to_string(),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_button_ignore_default() {
+        let ml = parse_strict("option name CH type button default Ignore min 5 max 6 var A var B\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Button {
+            name: "CH".to_string(),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_option_string_empty() {
+        let ml = parse_strict("option name Nalimov Path  type string default <empty>\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::String {
+            name: "Nalimov Path".to_string(),
+            default: Some("".to_string()),
+        });
+
+        assert_eq!(ml[0], m);
     }
 }

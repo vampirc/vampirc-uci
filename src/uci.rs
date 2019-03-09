@@ -318,7 +318,13 @@ impl Serializable for UciMessage {
                 let mut s: String = String::from(format!("setoption name {}", name));
 
                 if let Some(val) = value {
-                    s += format!(" value {}", *val).as_str();
+                    if val.len() == 0 {
+                        s += " value <empty>";
+                    } else {
+                        s += format!(" value {}", *val).as_str();
+                    }
+                } else {
+                    s += " value <empty>";
                 }
 
                 s
@@ -1412,5 +1418,21 @@ mod tests {
         let m = UciMessage::Info(attributes);
 
         assert_eq!(m.serialize(), "info other Some other message.");
+    }
+
+    #[test]
+    fn test_serialize_none_setoption() {
+        assert_eq!(UciMessage::SetOption {
+            name: "Some option".to_string(),
+            value: None,
+        }.serialize(), "setoption name Some option value <empty>")
+    }
+
+    #[test]
+    fn test_serialize_empty_setoption() {
+        assert_eq!(UciMessage::SetOption {
+            name: "ABC".to_string(),
+            value: Some(String::from("")),
+        }.serialize(), "setoption name ABC value <empty>")
     }
 }
