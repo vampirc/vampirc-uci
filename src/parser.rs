@@ -189,7 +189,6 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                         match sp.as_rule() {
                             Rule::go_time => {
                                 for spi in sp.into_inner() {
-                                    println!("SPI RULE");
                                     match spi.as_rule() {
                                         Rule::go_ponder => { time_control = Some(UciTimeControl::Ponder); }
                                         Rule::go_infinite => { time_control = Some(UciTimeControl::Infinite); }
