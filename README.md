@@ -90,6 +90,11 @@ for m in messages {
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
+## New in 0.7.5
+
+* Support for parsing of the `option` message.
+* Proper support for `<empty>` strings in `option` and `setoption`.
+
 ## Limitations
 
 The current version 0.7.x only supports the parsing of all messages, whether engine- or GUI-bound, with the exception of the two
@@ -118,7 +123,7 @@ Support for these two is coming up in the next release.
 * `bestmove`
 * `copyprotection`
 * `registration`
-* `option`+
+* `option`
 * `info`+
 
 \+ Except for parsing (coming up in 0.8.0).
