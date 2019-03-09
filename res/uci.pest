@@ -104,16 +104,16 @@ protection_error = { ^"error" }
 
 // option
 option = ${ ^"option" ~ WHITESPACE+ ~ ^"name" ~ WHITESPACE+ ~ option_name2 ~ WHITESPACE+ ~ ^"type" ~ WHITESPACE+ ~ option_type
-~ (WHITESPACE+ ~ (^"default" ~ WHITESPACE+ ~ option_default)? ~ (WHITESPACE+ ~ ^"min" ~ WHITESPACE+ ~ option_min)? ~
- (WHITESPACE+ ~ ^"max" ~ WHITESPACE+ ~ option_max)? ~ (WHITESPACE+ ~ ^"var" ~ WHITESPACE+ ~ option_var)*)* }
-option_name2 = ${ !^"type" ~ token ~ (WHITESPACE+ ~ !^"type" ~ token+)* }
+~ ((WHITESPACE+ ~ ^"default" ~ WHITESPACE+ ~ option_default)? ~ (WHITESPACE+ ~ ^"min" ~ WHITESPACE+ ~ option_min)? ~
+ (WHITESPACE+ ~ ^"max" ~ WHITESPACE+ ~ option_max)? ~ (WHITESPACE+ ~ ^"var" ~ WHITESPACE+ ~ option_var)*)? }
+option_name2 = ${ (!^"type" ~ token) ~ (WHITESPACE+ ~ !^"type" ~ token+)* }
 option_type = ${ option_check | option_spin | option_combo | option_string | option_button }
 option_check = { ^"check" }
 option_spin = { ^"spin" }
 option_combo = { ^"combo" }
 option_string = { ^"string" }
 option_button = { ^"button" }
-option_default = {!(^"min" | ^"max" | ^"var") ~ (WHITESPACE+ ~ !(^"min" | ^"max" | ^"var") ~ token+)*}
+option_default = {!(^"min" | ^"max" | ^"var") ~ token ~ (WHITESPACE+ ~ !(^"min" | ^"max" | ^"var") ~ token+)*}
 option_min = { i64 }
 option_max = { i64 }
 option_var = { !^"var" ~ token ~ (WHITESPACE+ ~ !^"var" ~ token+)* }

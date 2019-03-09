@@ -1121,4 +1121,98 @@ mod tests {
         assert_eq!(ml[0], UciMessage::Registration(ProtectionState::Checking));
         assert_eq!(ml[1], UciMessage::Registration(ProtectionState::Error));
     }
+
+    #[test]
+    fn parse_option_check() {
+        let ml = parse_strict("option name Nullmove type check default true\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Check {
+            name: "Nullmove".to_string(),
+            default: Some(true),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn parse_option_check_no_default() {
+        let ml = parse_strict("option    name   A long option name type  check   \n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Check {
+            name: "A long option name".to_string(),
+            default: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn parse_option_spin() {
+        let ml = parse_strict("option name Selectivity type spin default 2 min 0 max 4\n\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "Selectivity".to_string(),
+            default: Some(2),
+            min: Some(0),
+            max: Some(4),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn parse_option_spin_no_default() {
+        let ml = parse_strict("option name A spin option without a default type spin min -5676 max -33\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "A spin option without a default".to_string(),
+            default: None,
+            min: Some(-5676),
+            max: Some(-33),
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn parse_option_spin_just_min() {
+        let ml = parse_strict("option name JUST MIN type spin min -40964656\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "JUST MIN".to_string(),
+            default: None,
+            min: Some(-40964656),
+            max: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn parse_option_spin_just_max() {
+        let ml = parse_strict("option name just_max type spin max 56565464509\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "just_max".to_string(),
+            default: None,
+            max: Some(56565464509),
+            min: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn parse_option_spin_just_default_and_max() {
+        let ml = parse_strict("option name def max type spin default -5 max 55\n").unwrap();
+
+        let m = UciMessage::Option(UciOptionConfig::Spin {
+            name: "def max".to_string(),
+            default: Some(-5),
+            max: Some(55),
+            min: None,
+        });
+
+        assert_eq!(ml[0], m);
+    }
 }
