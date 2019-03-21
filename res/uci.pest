@@ -5,7 +5,7 @@ commands = _{ SOI ~ ws_nl* ~ message+ ~ !any}
 commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* }
 
 message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit |
-            position | go | id | uciok | readyok | bestmove | copyprotection | registration | option) ~
+            position | go | id | uciok | readyok | bestmove | copyprotection | registration | option | info) ~
             WHITESPACE* ~ NEWLINE+}
 
 uci = ${ ^"uci" ~ !non_ws }
@@ -128,7 +128,7 @@ option_var = { !^"var" ~ token ~ (WHITESPACE+ ~ !^"var" ~ token+)* }
 info = ${^"info" ~ (WHITESPACE+ ~ info_attribute)+ }
 info_attribute = { info_depth | info_seldepth | info_time | info_nodes | info_currmovenum | info_hashfull | info_nps |
  info_tbhits | info_sbhits | info_cpuload | info_string | info_pv | info_multipv | info_refutation | info_currline |
- info_any }
+ info_score | info_any }
 info_depth = ${ ^"depth" ~ WHITESPACE+ ~ digits3 }
 info_seldepth = ${ ^"seldepth" ~ WHITESPACE+ ~ digits3 }
 info_time = ${ ^"time" ~ WHITESPACE+ ~ digits12 }
