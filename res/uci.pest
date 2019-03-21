@@ -118,6 +118,42 @@ option_min = { i64 }
 option_max = { i64 }
 option_var = { !^"var" ~ token ~ (WHITESPACE+ ~ !^"var" ~ token+)* }
 
+// info
+// e.g. "info currmove e2e4 currmovenumber 1" or
+// 	     "info depth 12 nodes 123456 nps 100000".
+// 	Also all infos belonging to the pv should be sent together
+// 	e.g. "info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3"
+
+
+info = ${^"info" ~ (WHITESPACE+ ~ info_attribute)+ }
+info_attribute = { info_depth | info_seldepth | info_time | info_nodes | info_currmovenum | info_hashfull | info_nps |
+ info_tbhits | info_sbhits | info_cpuload | info_string | info_pv | info_multipv | info_refutation | info_currline |
+ info_any }
+info_depth = ${ ^"depth" ~ WHITESPACE+ ~ digits3 }
+info_seldepth = ${ ^"seldepth" ~ WHITESPACE+ ~ digits3 }
+info_time = ${ ^"time" ~ WHITESPACE+ ~ digits12 }
+info_nodes = ${ ^"nodes" ~ WHITESPACE+ ~ digits12 }
+info_currmovenum = ${ ^"currmovenum" ~ WHITESPACE+ ~ digits12 }
+info_hashfull = ${ ^"hashfull" ~ WHITESPACE+ ~ digits12 }
+info_nps = ${ ^"nps" ~ WHITESPACE+ ~ digits12 }
+info_tbhits = ${ ^"tbhits" ~ WHITESPACE+ ~ digits12 }
+info_sbhits = ${ ^"sbhits" ~ WHITESPACE+ ~ digits12 }
+info_cpuload = ${ ^"sbhits" ~ WHITESPACE+ ~ digits12 }
+info_string = ${ ^"string" ~ WHITESPACE+ ~ info_string_string }
+info_any = ${ token ~ WHITESPACE+ ~ info_string_string }
+info_string_string = { any+ }
+info_pv = ${ ^"pv" ~ (WHITESPACE+ ~ a_move)+ }
+info_multipv = ${ ^"multipv" ~ WHITESPACE+ ~ digits12 }
+info_refutation = ${ ^"refutation" ~ (WHITESPACE+ ~ a_move)+ }
+info_currline = ${ ^"currline" ~ (WHITESPACE+ ~ info_cpunr)* ~ (WHITESPACE+ ~ a_move)+ }
+info_cpunr = { digits3 }
+info_score = ${ ^"score" ~ WHITESPACE+ ~ (info_cp | info_mate) ~ (WHITESPACE+ ~ (info_lowerbound | info_upperbound))* }
+info_cp = ${ ^"cp" ~ WHITESPACE+ ~ i64 }
+info_mate = ${ ^"mate" ~ WHITESPACE+ ~ i64 }
+info_lowerbound = { ^"lowerbound" }
+info_upperbound = { ^"upperbound" }
+
+
 
 
 milliseconds = { digit{1,12} }
