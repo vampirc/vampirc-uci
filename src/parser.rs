@@ -10,7 +10,7 @@ use pest::error::Error;
 use pest::iterators::Pair;
 use pest::Parser;
 
-use crate::uci::{MessageList, UciFen, UciMessage, UciMove, UciPiece, UciSearchControl, UciSquare, UciTimeControl};
+use crate::uci::{MessageList, UciFen, UciInfoAttribute, UciMessage, UciMove, UciPiece, UciSearchControl, UciSquare, UciTimeControl};
 use crate::uci::ProtectionState;
 use crate::UciOptionConfig;
 
@@ -438,6 +438,29 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                         };
 
                     UciMessage::Option(uoc)
+                }
+                Rule::info => {
+                    let mut info_attr: Vec<UciInfoAttribute> = vec![];
+
+                    for sp in pair.into_inner() {
+                        match sp.as_rule() {
+                            Rule::info_attribute => {
+                                for spi in sp.into_inner() {
+                                    match spi.as_rule() {
+                                        Rule::info_depth => {
+                                            let info_depth = UciInfoAttribute::Depth(parse_u8(spi, Rule::digits3));
+                                            info_attr.push(info_depth);
+                                            break;
+                                        }
+                                        _ => unreachable!()
+                                    }
+                                }
+                            }
+                            _ => unreachable!()
+                        }
+                    }
+
+                    UciMessage::Info(info_attr)
                 }
 
                 _ => unreachable!()
@@ -1303,6 +1326,15 @@ mod tests {
             name: "Nalimov Path".to_string(),
             default: Some("".to_string()),
         });
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_depth() {
+        let ml = parse_strict("info depth 23\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Depth(23)]);
 
         assert_eq!(ml[0], m);
     }
