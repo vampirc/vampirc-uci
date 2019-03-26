@@ -452,6 +452,88 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                             info_attr.push(info_depth);
                                             break;
                                         }
+                                        Rule::info_seldepth => {
+                                            let info_depth = UciInfoAttribute::SelDepth(parse_u8(spi, Rule::digits3));
+                                            info_attr.push(info_depth);
+                                            break;
+                                        }
+                                        Rule::info_time => {
+                                            let info_time = UciInfoAttribute::Time(parse_u64(spi, Rule::digits12));
+                                            info_attr.push(info_time);
+                                            break;
+                                        }
+                                        Rule::info_nodes => {
+                                            let info_nodes = UciInfoAttribute::Nodes(parse_u64(spi, Rule::digits12));
+                                            info_attr.push(info_nodes);
+                                            break;
+                                        }
+                                        Rule::info_currmovenum => {
+                                            let an_info = UciInfoAttribute::CurrMoveNum(parse_u64(spi, Rule::digits12) as u16);
+                                            info_attr.push(an_info);
+                                            break;
+                                        }
+                                        Rule::info_hashfull => {
+                                            let an_info = UciInfoAttribute::HashFull(parse_u64(spi, Rule::digits12) as u16);
+                                            info_attr.push(an_info);
+                                            break;
+                                        }
+                                        Rule::info_nps => {
+                                            let an_info = UciInfoAttribute::Nps(parse_u64(spi, Rule::digits12));
+                                            info_attr.push(an_info);
+                                            break;
+                                        }
+                                        Rule::info_tbhits => {
+                                            let an_info = UciInfoAttribute::TbHits(parse_u64(spi, Rule::digits12));
+                                            info_attr.push(an_info);
+                                            break;
+                                        }
+                                        Rule::info_sbhits => {
+                                            let an_info = UciInfoAttribute::SbHits(parse_u64(spi, Rule::digits12));
+                                            info_attr.push(an_info);
+                                            break;
+                                        }
+                                        Rule::info_cpuload => {
+                                            let an_info = UciInfoAttribute::CpuLoad(parse_u64(spi, Rule::digits12) as u16);
+                                            info_attr.push(an_info);
+                                            break;
+                                        }
+                                        Rule::info_multipv => {
+                                            let an_info = UciInfoAttribute::MultiPv(parse_u64(spi, Rule::digits12) as u16);
+                                            info_attr.push(an_info);
+                                            break;
+                                        }
+                                        Rule::info_string => {
+                                            for spii in spi.into_inner() {
+                                                match spii.as_rule() {
+                                                    Rule::info_string_string => {
+                                                        let an_info = UciInfoAttribute::String(spii.as_span().as_str().to_owned());
+                                                        info_attr.push(an_info);
+                                                        break;
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                            break;
+                                        }
+                                        Rule::info_any => {
+                                            let mut s: Option<String> = None;
+                                            let mut t: Option<String> = None;
+
+                                            for spii in spi.into_inner() {
+                                                match spii.as_rule() {
+                                                    Rule::token => {
+                                                        t = Some(spii.as_span().as_str().to_owned());
+                                                    }
+                                                    Rule::info_string_string => {
+                                                        s = Some(spii.as_span().as_str().to_owned());
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                            let an_info = UciInfoAttribute::Any(t.unwrap(), s.unwrap());
+                                            info_attr.push(an_info);
+                                            break;
+                                        }
                                         _ => unreachable!()
                                     }
                                 }
@@ -1335,6 +1417,114 @@ mod tests {
         let ml = parse_strict("info depth 23\n").unwrap();
 
         let m = UciMessage::Info(vec![UciInfoAttribute::Depth(23)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_seldepth() {
+        let ml = parse_strict("info seldepth 9\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::SelDepth(9)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_time() {
+        let ml = parse_strict("info    time    9002\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Time(9002)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_nodes() {
+        let ml = parse_strict("info nodes    56435234425\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Nodes(56435234425)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_currmovenum() {
+        let ml = parse_strict("info currmovenum 102\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::CurrMoveNum(102)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_hashfull() {
+        let ml = parse_strict("info hashfull 673\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::HashFull(673)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_nps() {
+        let ml = parse_strict("info nps 12003\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Nps(12003)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_tbhits() {
+        let ml = parse_strict("info tbhits 5305\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::TbHits(5305)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_sbhits() {
+        let ml = parse_strict("info sbhits 0\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::SbHits(0)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_cpuload() {
+        let ml = parse_strict("info cpuload 773\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::CpuLoad(773)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_multipv() {
+        let ml = parse_strict("info multipv 2\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::MultiPv(2)]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_string() {
+        let ml = parse_strict("info string    I am   the Walrus! Cuckoo cachoo.\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::String("I am   the Walrus! Cuckoo cachoo.".to_owned())]);
+
+        assert_eq!(ml[0], m);
+    }
+
+    #[test]
+    fn test_parse_info_any() {
+        let ml = parse_strict("info UCI_Whatever -29 A3 57\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Any("UCI_Whatever".to_owned(), "-29 A3 57".to_owned())]);
 
         assert_eq!(ml[0], m);
     }
