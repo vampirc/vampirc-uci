@@ -502,6 +502,34 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                             info_attr.push(an_info);
                                             break;
                                         }
+                                        Rule::info_pv => {
+                                            let mut mv: Vec<UciMove> = vec![];
+                                            for spii in spi.into_inner() {
+                                                match spii.as_rule() {
+                                                    Rule::a_move => {
+                                                        let a_move = parse_a_move(spii);
+                                                        mv.push(a_move);
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                            info_attr.push(UciInfoAttribute::Pv(mv));
+                                            break;
+                                        }
+                                        Rule::info_refutation => {
+                                            let mut mv: Vec<UciMove> = vec![];
+                                            for spii in spi.into_inner() {
+                                                match spii.as_rule() {
+                                                    Rule::a_move => {
+                                                        let a_move = parse_a_move(spii);
+                                                        mv.push(a_move);
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                            info_attr.push(UciInfoAttribute::Refutation(mv));
+                                            break;
+                                        }
                                         Rule::info_string => {
                                             for spii in spi.into_inner() {
                                                 match spii.as_rule() {
@@ -1543,7 +1571,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_currmove() {
+    fn test_parse_info_currmove() {
         let ml = parse_strict("info currmove a7a8q\n").unwrap();
 
         let m = UciMessage::Info(vec![UciInfoAttribute::CurrMove(
@@ -1552,6 +1580,35 @@ mod tests {
                 to: UciSquare::from('a', 8),
                 promotion: Some(UciPiece::Queen),
             }
+        )]);
+
+        assert_eq!(m, ml[0]);
+    }
+
+    #[test]
+    fn test_parse_info_pv() {
+        let ml = parse_strict("info pv e2e4 e7e5 g1f3\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Pv(
+            vec![
+                UciMove::from_to(UciSquare::from('e', 2), UciSquare::from('e', 4)),
+                UciMove::from_to(UciSquare::from('e', 7), UciSquare::from('e', 5)),
+                UciMove::from_to(UciSquare::from('g', 1), UciSquare::from('f', 3)),
+            ]
+        )]);
+
+        assert_eq!(m, ml[0]);
+    }
+
+    #[test]
+    fn test_parse_info_refutation() {
+        let ml = parse_strict("info refutation d1h5 g6h5\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Refutation(
+            vec![
+                UciMove::from_to(UciSquare::from('d', 1), UciSquare::from('h', 5)),
+                UciMove::from_to(UciSquare::from('g', 6), UciSquare::from('h', 5)),
+            ]
         )]);
 
         assert_eq!(m, ml[0]);
