@@ -515,6 +515,19 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                             }
                                             break;
                                         }
+                                        Rule::info_currmove => {
+                                            for spii in spi.into_inner() {
+                                                match spii.as_rule() {
+                                                    Rule::a_move => {
+                                                        let an_info = UciInfoAttribute::CurrMove(parse_a_move(spii));
+                                                        info_attr.push(an_info);
+                                                        break;
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                            break;
+                                        }
                                         Rule::info_any => {
                                             let mut s: Option<String> = None;
                                             let mut t: Option<String> = None;
@@ -1190,7 +1203,7 @@ mod tests {
             ponder: None,
         };
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     // bestmove g1f3 ponder d8f6
@@ -1215,7 +1228,7 @@ mod tests {
             }),
         };
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1243,7 +1256,7 @@ mod tests {
             default: Some(true),
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1255,7 +1268,7 @@ mod tests {
             default: None,
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1269,7 +1282,7 @@ mod tests {
             max: Some(4),
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1283,7 +1296,7 @@ mod tests {
             max: Some(-33),
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1297,7 +1310,7 @@ mod tests {
             max: None,
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1311,7 +1324,7 @@ mod tests {
             min: None,
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1325,7 +1338,7 @@ mod tests {
             min: None,
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1338,7 +1351,7 @@ mod tests {
             var: vec![String::from("Solid"), String::from("Normal"), String::from("Risky")],
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1351,7 +1364,7 @@ mod tests {
             var: vec![String::from("A B C"), String::from("D E   F"), String::from("1 2 3")],
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1363,7 +1376,7 @@ mod tests {
             default: Some("c:\\".to_string()),
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1375,7 +1388,7 @@ mod tests {
             default: None,
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1386,7 +1399,7 @@ mod tests {
             name: "Clear Hash".to_string(),
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1397,7 +1410,7 @@ mod tests {
             name: "CH".to_string(),
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1409,7 +1422,7 @@ mod tests {
             default: Some("".to_string()),
         });
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1418,7 +1431,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::Depth(23)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1427,7 +1440,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::SelDepth(9)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1436,7 +1449,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::Time(9002)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1445,7 +1458,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::Nodes(56435234425)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1454,7 +1467,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::CurrMoveNum(102)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1463,7 +1476,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::HashFull(673)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1472,7 +1485,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::Nps(12003)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1481,7 +1494,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::TbHits(5305)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1490,7 +1503,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::SbHits(0)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1499,7 +1512,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::CpuLoad(773)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1508,7 +1521,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::MultiPv(2)]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1517,7 +1530,7 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::String("I am   the Walrus! Cuckoo cachoo.".to_owned())]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
     }
 
     #[test]
@@ -1526,6 +1539,21 @@ mod tests {
 
         let m = UciMessage::Info(vec![UciInfoAttribute::Any("UCI_Whatever".to_owned(), "-29 A3 57".to_owned())]);
 
-        assert_eq!(ml[0], m);
+        assert_eq!(m, ml[0]);
+    }
+
+    #[test]
+    fn test_parse_currmove() {
+        let ml = parse_strict("info currmove a7a8q\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::CurrMove(
+            UciMove {
+                from: UciSquare::from('a', 7),
+                to: UciSquare::from('a', 8),
+                promotion: Some(UciPiece::Queen),
+            }
+        )]);
+
+        assert_eq!(m, ml[0]);
     }
 }

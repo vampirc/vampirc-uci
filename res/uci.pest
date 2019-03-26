@@ -126,13 +126,14 @@ option_var = { !^"var" ~ token ~ (WHITESPACE+ ~ !^"var" ~ token+)* }
 
 
 info = ${^"info" ~ (WHITESPACE+ ~ info_attribute)+ }
-info_attribute = { info_depth | info_seldepth | info_time | info_nodes | info_currmovenum | info_hashfull | info_nps |
+info_attribute = { info_depth | info_seldepth | info_time | info_nodes | info_currmovenum | info_currmove | info_hashfull | info_nps |
  info_tbhits | info_sbhits | info_cpuload | info_string | info_pv | info_multipv | info_refutation | info_currline |
  info_score | info_any }
 info_depth = ${ ^"depth" ~ WHITESPACE+ ~ digits3 }
 info_seldepth = ${ ^"seldepth" ~ WHITESPACE+ ~ digits3 }
 info_time = ${ ^"time" ~ WHITESPACE+ ~ digits12 }
 info_nodes = ${ ^"nodes" ~ WHITESPACE+ ~ digits12 }
+info_currmove = ${ ^"currmove" ~ WHITESPACE+ ~ a_move }
 info_currmovenum = ${ ^"currmovenum" ~ WHITESPACE+ ~ digits12 }
 info_hashfull = ${ ^"hashfull" ~ WHITESPACE+ ~ digits12 }
 info_nps = ${ ^"nps" ~ WHITESPACE+ ~ digits12 }
