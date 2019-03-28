@@ -630,6 +630,29 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                             }
                                             break;
                                         }
+                                        Rule::info_score => {
+                                            let mut cp: Option<i32> = None;
+                                            let mut mate: Option<i8> = None;
+                                            let mut lb: Option<bool> = None;
+                                            let mut ub: Option<bool> = None;
+
+                                            for spii in spi.into_inner() {
+                                                match spii.as_rule() {
+                                                    Rule::info_cp => cp = Some(parse_i64(spii, Rule::i64) as i32),
+                                                    Rule::info_mate => mate = Some(parse_i64(spii, Rule::i64) as i8),
+                                                    Rule::info_lowerbound => lb = Some(true),
+                                                    Rule::info_upperbound => ub = Some(true),
+                                                    _ => {}
+                                                }
+                                            }
+
+                                            info_attr.push(UciInfoAttribute::Score {
+                                                cp,
+                                                mate,
+                                                lower_bound: lb,
+                                                upper_bound: ub,
+                                            });
+                                        }
                                         Rule::info_any => {
                                             let mut s: Option<String> = None;
                                             let mut t: Option<String> = None;
@@ -1768,6 +1791,56 @@ mod tests {
                     UciMove::from_to(UciSquare::from('d', 7), UciSquare::from('d', 5)),
                 ],
             }
+        ]);
+
+        assert_eq!(m, ml[0]);
+    }
+
+    #[test]
+    fn test_info_score_cp() {
+        let ml = parse_strict("info score cp 20\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::from_centipawns(20)
+        ]);
+
+        assert_eq!(m, ml[0]);
+    }
+
+    #[test]
+    fn test_info_score_mate() {
+        let ml = parse_strict("info score mate -3\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::from_mate(-3)
+        ]);
+
+        assert_eq!(m, ml[0]);
+    }
+
+    #[test]
+    fn test_info_score_cp_lowerbound() {
+        let ml = parse_strict("info score cp -75 lowerbound\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Score {
+            cp: Some(-75),
+            mate: None,
+            lower_bound: Some(true),
+            upper_bound: None,
+        }
+        ]);
+
+        assert_eq!(m, ml[0]);
+    }
+
+    #[test]
+    fn test_info_score_cp_upperbound() {
+        let ml = parse_strict("info score cp 404 upperbound\n").unwrap();
+
+        let m = UciMessage::Info(vec![UciInfoAttribute::Score {
+            cp: Some(404),
+            mate: None,
+            upper_bound: Some(true),
+            lower_bound: None,
+        }
         ]);
 
         assert_eq!(m, ml[0]);
