@@ -820,6 +820,8 @@ fn parse_a_move(sp: Pair<Rule>) -> UciMove {
 
 #[cfg(test)]
 mod tests {
+    use crate::uci::Serializable;
+
     use super::*;
 
     #[test]
@@ -1844,5 +1846,67 @@ mod tests {
         ]);
 
         assert_eq!(m, ml[0]);
+    }
+
+    // info score cp 13  depth 1 nodes 13 time 15 pv f1b5
+    #[test]
+    fn test_info_multi1() {
+        let ml = parse_strict("info score cp 13  depth 1 nodes 13 time 15 pv f1b5\n").unwrap();
+        println!("{}", ml[0].serialize());
+        assert_eq!(1, ml.len());
+
+        let m = UciMessage::Info(vec![
+            UciInfoAttribute::from_centipawns(13),
+            UciInfoAttribute::Depth(1),
+            UciInfoAttribute::Nodes(13),
+            UciInfoAttribute::Time(15),
+            UciInfoAttribute::Pv(vec![
+                UciMove::from_to(UciSquare::from('f', 1), UciSquare::from('b', 5))
+            ])
+        ]);
+
+        assert_eq!(m, ml[0]);
+
+        assert_eq!(m.serialize(), "info score cp 13 depth 1 nodes 13 time 15 pv f1b5")
+    }
+
+    // info depth 2 seldepth 2
+    #[test]
+    fn test_info_multi2() {
+        let ml = parse_strict("info depth 2 seldepth 2\n").unwrap();
+        println!("{}", ml[0].serialize());
+        assert_eq!(1, ml.len());
+
+        let m = UciMessage::Info(vec![
+            UciInfoAttribute::Depth(2),
+            UciInfoAttribute::SelDepth(2),
+        ]);
+
+        assert_eq!(m, ml[0]);
+        assert_eq!(m.serialize(), "info depth 2 seldepth 2")
+    }
+
+    // info score cp 20  depth 3 nodes 423 time 15 pv f1c4 g8f6 b1c3
+    #[test]
+    fn test_info_multi3() {
+        let ml = parse_strict("info score cp 20  depth 3 nodes 423 time 15 pv f1c4 g8f6 b1c3 \n").unwrap();
+        println!("{}", ml[0].serialize());
+        assert_eq!(1, ml.len());
+
+        let m = UciMessage::Info(vec![
+            UciInfoAttribute::from_centipawns(20),
+            UciInfoAttribute::Depth(3),
+            UciInfoAttribute::Nodes(423),
+            UciInfoAttribute::Time(15),
+            UciInfoAttribute::Pv(vec![
+                UciMove::from_to(UciSquare::from('f', 1), UciSquare::from('c', 4)),
+                UciMove::from_to(UciSquare::from('g', 8), UciSquare::from('f', 6)),
+                UciMove::from_to(UciSquare::from('b', 1), UciSquare::from('c', 3))
+            ])
+        ]);
+
+        assert_eq!(m, ml[0]);
+
+        assert_eq!(m.serialize(), "info score cp 20 depth 3 nodes 423 time 15 pv f1c4 g8f6 b1c3")
     }
 }
