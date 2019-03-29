@@ -17,7 +17,7 @@ To use the crate, declare a dependency on it in your Cargo.toml file:
 
 ```toml
 [dependencies]
-vampirc-uci = "0.7"
+vampirc-uci = "0.8"
 ```
 
 Then reference the `vampirc_uci` crate in your crate root:
@@ -90,16 +90,33 @@ for m in messages {
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
-## New in 0.7.5
+### New in 0.8.0
+
+* Support for parsing of the `info` message, with the [UciAttributeInfo](https://docs.rs/vampirc-uci/0.8/vampirc_uci/uci/enum.UciInfoAttribute.html) 
+enum representing all 17 types of messages described by the UCI documentation, as well as any other info message via the
+[Any variant](https://docs.rs/vampirc-uci/0.8/vampirc_uci/uci/enum.UciInfoAttribute.html#variant.Any).
+
+### New in 0.7.5
 
 * Support for parsing of the `option` message.
 * Proper support for `<empty>` strings in `option` and `setoption`.
 
-## Limitations
+## vampirc-io
 
-The current version 0.7.x only supports the parsing of all messages, whether engine- or GUI-bound, with the exception of the two
-most complex GUI-bound messages (`option` and `info`, although it does already support their representation and serialization). 
-Support for these two is coming up in the next release.
+This crate goes together well with the [vampirc-io](https://github.com/vampirc/vampirc-io) crate, a library for 
+non-blocking communication over standard input and output (which is how UCI communication is usually conducted), 
+based on the [Tokio IO framework](https://github.com/tokio-rs/tokio).
+
+## Limitations and 1.0
+
+The library is functionally complete – it supports the parsing and serialization to string of all the messages
+described by the UCI specification. Before the 1.0 version can be released, though, this library needs to be battle
+tested more, especially in the upcoming [Vampirc chess engine](https://vampirc.kejzar.si).
+
+Furthermore, as I am fairly new to Rust, I want to make sure the implementation of this protocol parser is Rust-idiomatic
+before releasing 1.0. For this reason, the API should not be considered completely stable until 1.0 is released. 
+
+Additionally, some performance testing would also not go amiss.
 
 ### Supported engine-bound messages (100%)
 
@@ -115,7 +132,7 @@ Support for these two is coming up in the next release.
 * `quit`
 * `go`
 
-### Supported GUI-bound messages
+### Supported GUI-bound messages (100%)
 
 * `id`
 * `uciok`
@@ -124,7 +141,5 @@ Support for these two is coming up in the next release.
 * `copyprotection`
 * `registration`
 * `option`
-* `info`+
-
-\+ Except for parsing (coming up in 0.8.0).
+* `info`
 
