@@ -65,6 +65,29 @@ pub fn parse(s: &str) -> MessageList {
     do_parse_uci(s, Rule::commands_ignore_unknown).unwrap()
 }
 
+/// This is like `parse`, except that it returns a `UciMessage::UnknownMessage` variant if it does not recognize the
+/// message. Best use with a single message, since only one `UnknownMessage` can be returned.
+///
+/// /// # Examples
+///
+/// ```
+/// use vampirc_uci::UciMessage;
+/// use vampirc_uci::parse_with_unknown;
+///
+/// let messages = parse_with_unknown("not really a message\n");
+/// assert_eq!(messages.len(), 1);
+/// ```
+pub fn parse_with_unknown(s: &str) -> MessageList {
+    let parse_att = parse_strict(s);
+
+    if let Err(e) = parse_att {
+        let m = UciMessage::Unknown(s.trim_end().to_owned(), Some(e));
+        return vec![m];
+    }
+
+    parse_att.unwrap()
+}
+
 fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
     let mut ml = MessageList::default();
 
@@ -1908,5 +1931,32 @@ mod tests {
         assert_eq!(m, ml[0]);
 
         assert_eq!(m.serialize(), "info score cp 20 depth 3 nodes 423 time 15 pv f1c4 g8f6 b1c3")
+    }
+
+    #[test]
+    fn test_parse_with_unknown() {
+        let ml = parse_with_unknown("not really a message\n");
+        println!("{}", ml[0].serialize());
+        assert_eq!(1, ml.len());
+        assert_eq!(ml[0].is_unknown(), true);
+
+        match &ml[0] {
+            UciMessage::Unknown(msg, err) => {
+                assert_eq!(msg.as_str(), "not really a message");
+                assert_eq!(err.is_some(), true);
+                assert_eq!(err.clone().unwrap().to_string(), " --> 1:1\n  |\n1 | not really a message␊\n  | ^---\n  |\n  = expected uci, debug, isready, setoption, register, ucinewgame, stop, quit, ponderhit, position, go, id, uciok, readyok, bestmove, copyprotection, registration, option, or info");
+            },
+            _ => panic!("Expected a message of type UnknownMessage")
+        }
+    }
+
+    #[test]
+    fn test_parse_with_unknown_success() {
+        let ml = parse_with_unknown("uci\nuciok\n");
+        assert_eq!(2, ml.len());
+        assert_eq!(ml[0].is_unknown(), false);
+        assert_eq!(ml[1].is_unknown(), false);
+
+        assert_eq!(ml, vec![UciMessage::Uci, UciMessage::UciOk]);
     }
 }

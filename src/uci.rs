@@ -7,6 +7,10 @@
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
+use pest::error::Error as PestError;
+
+use crate::parser::Rule;
+
 /// Specifies whether a message is engine- or GUI-bound.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum CommunicationDirection {
@@ -126,7 +130,10 @@ pub enum UciMessage {
     Option(UciOptionConfig),
 
     /// The `info` GUI-bound message.
-    Info(Vec<UciInfoAttribute>)
+    Info(Vec<UciInfoAttribute>),
+
+    /// Indicating unknown message.
+    Unknown(String, Option<PestError<Rule>>)
 }
 
 impl UciMessage {
@@ -256,6 +263,14 @@ impl UciMessage {
                 None
             }
             _ => None
+        }
+    }
+
+    /// Return `true` if this `UciMessage` is of variant `UnknownMessage`.
+    pub fn is_unknown(&self) -> bool {
+        match self {
+            UciMessage::Unknown(..) => true,
+            _ => false
         }
     }
 }
@@ -443,6 +458,10 @@ impl Serializable for UciMessage {
                 }
 
                 s
+            },
+            UciMessage::Unknown(msg, ..) => {
+                format!("UNKNOWN MESSAGE: {}", msg)
+
             }
         }
     }
@@ -1434,5 +1453,16 @@ mod tests {
             name: "ABC".to_string(),
             value: Some(String::from("")),
         }.serialize(), "setoption name ABC value <empty>")
+    }
+
+    #[test]
+    fn test_is_unknown_false() {
+        assert_eq!(UciMessage::Uci.is_unknown(), false);
+    }
+
+    #[test]
+    fn test_is_unknown_true() {
+        let um = UciMessage::Unknown("Unrecognized Command".to_owned(), None);
+        assert_eq!(um.is_unknown(), true);
     }
 }
