@@ -90,6 +90,11 @@ for m in messages {
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
+### New in 0.8.1
+
+* Added `parse_with_unknown()` method that instead of ignoring unknown messages (like `parse`) or throwing an error (like `parse_strict`) returns
+them as a `UciMessage::Unknown` variant.
+
 ### New in 0.8.0
 
 * Support for parsing of the `info` message, with the [UciAttributeInfo](https://docs.rs/vampirc-uci/0.8/vampirc_uci/uci/enum.UciInfoAttribute.html) 

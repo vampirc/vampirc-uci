@@ -16,6 +16,7 @@ pub use pest::error::Error;
 
 pub use self::parser::parse;
 pub use self::parser::parse_strict;
+pub use self::parser::parse_with_unknown;
 pub use self::parser::Rule;
 pub use self::uci::CommunicationDirection;
 pub use self::uci::MessageList;
