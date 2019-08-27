@@ -1094,6 +1094,47 @@ impl Display for UciFen {
 /// A vector containing several `UciMessage`s.
 pub type MessageList = Vec<UciMessage>;
 
+/// A wrapper that keeps the serialized form in a byte vector. Mostly useful to provide an `AsRef<[u8]>` implementation for
+/// quick conversion to an array of bytes. Use the `::from(m: UciMessage)` to construct it.
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub struct ByteVecUciMessage {
+    pub message: UciMessage,
+    pub bytes: Vec<u8>,
+}
+
+impl Display for ByteVecUciMessage {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl From<UciMessage> for ByteVecUciMessage {
+    fn from(m: UciMessage) -> Self {
+        let b = Vec::from(m.serialize().as_bytes());
+        ByteVecUciMessage {
+            message: m,
+            bytes: b,
+        }
+    }
+}
+
+impl Into<UciMessage> for ByteVecUciMessage {
+    fn into(self) -> UciMessage {
+        self.message
+    }
+}
+
+impl AsRef<UciMessage> for ByteVecUciMessage {
+    fn as_ref(&self) -> &UciMessage {
+        &self.message
+    }
+}
+
+impl AsRef<[u8]> for ByteVecUciMessage {
+    fn as_ref(&self) -> &[u8] {
+        self.bytes.as_ref()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -1468,5 +1509,30 @@ mod tests {
     fn test_is_unknown_true() {
         let um = UciMessage::Unknown("Unrecognized Command".to_owned(), None);
         assert_eq!(um.is_unknown(), true);
+    }
+
+    #[test]
+    fn test_byte_vec_message_creation() {
+        let uok = ByteVecUciMessage::from(UciMessage::UciOk);
+        assert_eq!(uok.message, UciMessage::UciOk);
+        assert_eq!(uok.bytes, UciMessage::UciOk.serialize().as_bytes());
+
+        let asm: UciMessage = uok.into();
+        assert_eq!(asm, UciMessage::UciOk);
+    }
+
+    #[test]
+    fn test_byte_vec_message_as_ref_uci_message() {
+        let uci = ByteVecUciMessage::from(UciMessage::Uci);
+        let um: &UciMessage = uci.as_ref();
+        assert_eq!(*um, UciMessage::Uci);
+    }
+
+    #[test]
+    fn test_byte_vec_message_as_ref_u8() {
+        let uci = ByteVecUciMessage::from(UciMessage::UciNewGame);
+        let um: &[u8] = uci.as_ref();
+        let uc = Vec::from(um);
+        assert_eq!(uc, Vec::from(UciMessage::UciNewGame.serialize().as_bytes()));
     }
 }

@@ -90,6 +90,12 @@ for m in messages {
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
+### New in 0.8.2
+
+* Added `ByteVecUciMessage` as a `UciMessage` wrapper that keeps the serialized form of the message in the struct as a byte Vector. Useful if
+you need to serialize the same message multiple types or support `AsRef<[u8]>` trait for funnelling the messages into a `futures::Sink` or
+something.
+
 ### New in 0.8.1
 
 * Added `parse_with_unknown()` method that instead of ignoring unknown messages (like `parse`) or throwing an error (like `parse_strict`) returns
