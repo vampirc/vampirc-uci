@@ -1095,7 +1095,8 @@ impl Display for UciFen {
 pub type MessageList = Vec<UciMessage>;
 
 /// A wrapper that keeps the serialized form in a byte vector. Mostly useful to provide an `AsRef<[u8]>` implementation for
-/// quick conversion to an array of bytes. Use the `::from(m: UciMessage)` to construct it.
+/// quick conversion to an array of bytes. Use the `::from(m: UciMessage)` to construct it. It will add the newline
+/// character `\n` to the serialized message.
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct ByteVecUciMessage {
     pub message: UciMessage,
@@ -1110,7 +1111,7 @@ impl Display for ByteVecUciMessage {
 
 impl From<UciMessage> for ByteVecUciMessage {
     fn from(m: UciMessage) -> Self {
-        let b = Vec::from(m.serialize().as_bytes());
+        let b = Vec::from((m.serialize() + "\n").as_bytes());
         ByteVecUciMessage {
             message: m,
             bytes: b,
@@ -1515,7 +1516,7 @@ mod tests {
     fn test_byte_vec_message_creation() {
         let uok = ByteVecUciMessage::from(UciMessage::UciOk);
         assert_eq!(uok.message, UciMessage::UciOk);
-        assert_eq!(uok.bytes, UciMessage::UciOk.serialize().as_bytes());
+        assert_eq!(uok.bytes, (UciMessage::UciOk.serialize() + "\n").as_bytes());
 
         let asm: UciMessage = uok.into();
         assert_eq!(asm, UciMessage::UciOk);
@@ -1533,6 +1534,6 @@ mod tests {
         let uci = ByteVecUciMessage::from(UciMessage::UciNewGame);
         let um: &[u8] = uci.as_ref();
         let uc = Vec::from(um);
-        assert_eq!(uc, Vec::from(UciMessage::UciNewGame.serialize().as_bytes()));
+        assert_eq!(uc, Vec::from((UciMessage::UciNewGame.serialize() + "\n").as_bytes()));
     }
 }
