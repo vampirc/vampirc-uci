@@ -95,6 +95,7 @@ The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci
 * Added `ByteVecUciMessage` as a `UciMessage` wrapper that keeps the serialized form of the message in the struct as a byte Vector. Useful if
 you need to serialize the same message multiple types or support `AsRef<[u8]>` trait for funnelling the messages into a `futures::Sink` or
 something.
+* Modifications for integration with async [async-std](https://github.com/async-rs/async-std) based [vampirc-io](https://github.com/vampirc/vampirc-io).
 
 ### New in 0.8.1
 
@@ -116,7 +117,7 @@ enum representing all 17 types of messages described by the UCI documentation, a
 
 This crate goes together well with the [vampirc-io](https://github.com/vampirc/vampirc-io) crate, a library for 
 non-blocking communication over standard input and output (which is how UCI communication is usually conducted), 
-based on the [Tokio IO framework](https://github.com/tokio-rs/tokio).
+based on the [async-std framework](https://github.com/async-rs/async-std).
 
 ## Limitations and 1.0
 
