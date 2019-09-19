@@ -90,6 +90,10 @@ for m in messages {
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
+### New in 0.8.3
+
+* Added the `UciMessage::info_string() utility function`.
+
 ### New in 0.8.2
 
 * Added `ByteVecUciMessage` as a `UciMessage` wrapper that keeps the serialized form of the message in the struct as a byte Vector. Useful if

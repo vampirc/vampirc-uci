@@ -212,6 +212,11 @@ impl UciMessage {
         }
     }
 
+    /// Constructs an `info string ...` message.
+    pub fn info_message(s: String) -> UciMessage {
+        UciMessage::Info(vec![UciInfoAttribute::String(s)])
+    }
+
     /// Returns whether the command was meant for the engine or for the GUI.
     fn direction(&self) -> CommunicationDirection {
         match self {
