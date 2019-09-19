@@ -213,7 +213,7 @@ impl UciMessage {
     }
 
     /// Constructs an `info string ...` message.
-    pub fn info_message(s: String) -> UciMessage {
+    pub fn info_string(s: String) -> UciMessage {
         UciMessage::Info(vec![UciInfoAttribute::String(s)])
     }
 
