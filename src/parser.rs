@@ -1959,4 +1959,11 @@ mod tests {
 
         assert_eq!(ml, vec![UciMessage::Uci, UciMessage::UciOk]);
     }
+
+    #[test]
+    #[should_panic]
+    fn test_parse_go() {
+        parse("go\n");
+        let msgs = parse_strict("go\n").unwrap();
+    }
 }
