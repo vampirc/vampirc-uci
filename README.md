@@ -93,6 +93,7 @@ The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci
 ### New in 0.8.3
 
 * Added the `UciMessage::info_string() utility function`.
+* Allowed the empty `go` command (see [Parser cannot parse "go\n"](https://github.com/vampirc/vampirc-uci/issues/9)).
 
 ### New in 0.8.2
 
