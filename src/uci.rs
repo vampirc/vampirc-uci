@@ -155,11 +155,19 @@ impl UciMessage {
         }
     }
 
+    /// Constructs an empty [UciMessage::Register](enum.UciMessage.html#variant.Go) message.
+    pub fn go() -> UciMessage {
+        UciMessage::Go {
+            search_control: None,
+            time_control: None,
+        }
+    }
+
     /// Construct a `go ponder` [UciMessage::Register](enum.UciMessage.html#variant.Go) message.
     pub fn go_ponder() -> UciMessage {
         UciMessage::Go {
             search_control: None,
-            time_control: Some(UciTimeControl::Ponder)
+            time_control: Some(UciTimeControl::Ponder),
         }
     }
 
@@ -1540,5 +1548,11 @@ mod tests {
         let um: &[u8] = uci.as_ref();
         let uc = Vec::from(um);
         assert_eq!(uc, Vec::from((UciMessage::UciNewGame.serialize() + "\n").as_bytes()));
+    }
+
+    #[test]
+    fn test_empty_go_message() {
+        let empty_go = UciMessage::go();
+        assert_eq!(empty_go, UciMessage::Go { time_control: None, search_control: None });
     }
 }
