@@ -1,6 +1,6 @@
 [package]
 name = "vampirc-uci"
-version = "0.8.3"
+version = "0.8.4"
 description = "A Universal Chess Interface (UCI) protocol parser and serializer. Part of the Vampirc chess suite."
 documentation = "https://docs.rs/vampirc_uci"
 homepage = "https://vampirc.kejzar.si"
