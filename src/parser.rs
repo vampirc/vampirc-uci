@@ -1961,9 +1961,10 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_parse_go() {
         parse("go\n");
         let msgs = parse_strict("go\n").unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0], UciMessage::go())
     }
 }
