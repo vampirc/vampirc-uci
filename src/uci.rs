@@ -480,9 +480,7 @@ impl Serializable for UciMessage {
     }
 }
 
-unsafe impl Send for UciMessage {}
 
-unsafe impl Sync for UciMessage {}
 
 /// This enum represents the possible variants of the `go` UCI message that deal with the chess game's time controls
 /// and the engine's thinking time.

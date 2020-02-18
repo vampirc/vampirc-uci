@@ -90,6 +90,9 @@ for m in messages {
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
+### New in 0.8.4
+* Removed the explicit Safe and Sync implementations.
+
 ### New in 0.8.3
 
 * Added the `UciMessage::info_string() utility function`.
