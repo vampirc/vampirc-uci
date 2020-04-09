@@ -115,9 +115,11 @@ pub enum UciMessage {
     /// The `bestmove` GUI-bound message.
     BestMove {
         /// The move the engine thinks is the best one in the position.
+        #[cfg(not(feature = "chess"))]
         best_move: UciMove,
 
         /// The move the engine would like to ponder on.
+        #[cfg(not(feature = "chess"))]
         ponder: Option<UciMove>,
     },
 
@@ -206,6 +208,7 @@ impl UciMessage {
     }
 
     /// Constructs a `bestmove` GUI-bound message without the ponder move.
+    #[cfg(not(feature = "chess"))]
     pub fn best_move(best_move: UciMove) -> UciMessage {
         UciMessage::BestMove {
             best_move,
@@ -214,6 +217,7 @@ impl UciMessage {
     }
 
     /// Constructs a `bestmove` GUI-bound message _with_ the ponder move.
+    #[cfg(not(feature = "chess"))]
     pub fn best_move_with_ponder(best_move: UciMove, ponder: UciMove) -> UciMessage {
         UciMessage::BestMove {
             best_move,
@@ -439,6 +443,7 @@ impl Serializable for UciMessage {
             },
             UciMessage::UciOk => String::from("uciok"),
             UciMessage::ReadyOk => String::from("readyok"),
+            #[cfg(not(feature = "chess"))]
             UciMessage::BestMove { best_move, ponder } => {
                 let mut s = String::from(format!("bestmove {}", *best_move));
 
@@ -532,6 +537,7 @@ impl UciTimeControl {
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciSearchControl {
     /// Limits the search to these moves.
+    #[cfg(not(feature = "chess"))]
     pub search_moves: Vec<UciMove>,
 
     /// Search for mate in this many moves.
@@ -548,6 +554,7 @@ impl UciSearchControl {
     /// Creates an `UciSearchControl` with `depth` set to the parameter and everything else set to empty or `None`.
     pub fn depth(depth: u8) -> UciSearchControl {
         UciSearchControl {
+            #[cfg(not(feature = "chess"))]
             search_moves: vec![],
             mate: None,
             depth: Some(depth),
@@ -558,6 +565,7 @@ impl UciSearchControl {
     /// Creates an `UciSearchControl` with `mate` set to the parameter and everything else set to empty or `None`.
     pub fn mate(mate: u8) -> UciSearchControl {
         UciSearchControl {
+            #[cfg(not(feature = "chess"))]
             search_moves: vec![],
             mate: Some(mate),
             depth: None,
@@ -568,6 +576,7 @@ impl UciSearchControl {
     /// Creates an `UciSearchControl` with `nodes` set to the parameter and everything else set to empty or `None`.
     pub fn nodes(nodes: u64) -> UciSearchControl {
         UciSearchControl {
+            #[cfg(not(feature = "chess"))]
             search_moves: vec![],
             mate: None,
             depth: None,
@@ -585,6 +594,7 @@ impl Default for UciSearchControl {
     /// Creates an empty `UciSearchControl`.
     fn default() -> Self {
         UciSearchControl {
+            #[cfg(not(feature = "chess"))]
             search_moves: vec![],
             mate: None,
             depth: None,
@@ -785,6 +795,7 @@ pub enum UciInfoAttribute {
     },
 
     /// The `info currmove` message (current move).
+    #[cfg(not(feature = "chess"))]
     CurrMove(UciMove),
 
     /// The `info currmovenum` message (current move number).
@@ -810,6 +821,7 @@ pub enum UciInfoAttribute {
     String(String),
 
     /// The `info refutation` message (the first move is the move being refuted).
+    #[cfg(not(feature = "chess"))]
     Refutation(Vec<UciMove>),
 
     /// The `info currline` message (current line being calculated on a CPU).
@@ -818,6 +830,7 @@ pub enum UciInfoAttribute {
         cpu_nr: Option<u16>,
 
         /// The line being calculated.
+        #[cfg(not(feature = "chess"))]
         line: Vec<UciMove>,
     },
 
@@ -905,6 +918,7 @@ impl Serializable for UciInfoAttribute {
                     s += " upperbound";
                 }
             },
+            #[cfg(not(feature = "chess"))]
             UciInfoAttribute::CurrMove(uci_move) => s += &format!(" {}", *uci_move),
             UciInfoAttribute::CurrMoveNum(num) => s += &format!(" {}", *num),
             UciInfoAttribute::HashFull(permill) => s += &format!(" {}", *permill),
@@ -912,6 +926,7 @@ impl Serializable for UciInfoAttribute {
             UciInfoAttribute::TbHits(hits) | UciInfoAttribute::SbHits(hits) => s += &format!(" {}", *hits),
             UciInfoAttribute::CpuLoad(load) => s += &format!(" {}", *load),
             UciInfoAttribute::String(string) => s += &format!(" {}", string),
+            #[cfg(not(feature = "chess"))]
             UciInfoAttribute::CurrLine { cpu_nr, line } => {
                 if let Some(c) = cpu_nr {
                     s += &format!(" cpunr {}", *c);
@@ -940,6 +955,7 @@ impl Display for UciInfoAttribute {
 
 /// An enum representing the chess piece types.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[cfg(not(feature = "chess"))]
 pub enum UciPiece {
     Pawn,
     Knight,
@@ -949,6 +965,7 @@ pub enum UciPiece {
     King,
 }
 
+#[cfg(not(feature = "chess"))]
 impl UciPiece {
     /// Returns a character representing a piece in UCI move notation. Used for specifying promotion in moves.
     ///
@@ -970,6 +987,7 @@ impl UciPiece {
     }
 }
 
+#[cfg(not(feature = "chess"))]
 impl FromStr for UciPiece {
     type Err = FmtError;
 
@@ -997,6 +1015,7 @@ impl FromStr for UciPiece {
 }
 
 /// A representation of a chessboard square.
+#[cfg(not(feature = "chess"))]
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciSquare {
     /// The file. A character in the range of `a..h`.
@@ -1006,6 +1025,7 @@ pub struct UciSquare {
     pub rank: u8,
 }
 
+#[cfg(not(feature = "chess"))]
 impl UciSquare {
     /// Create a `UciSquare` from file character and a rank number.
     pub fn from(file: char, rank: u8) -> UciSquare {
@@ -1016,6 +1036,7 @@ impl UciSquare {
     }
 }
 
+#[cfg(not(feature = "chess"))]
 impl Display for UciSquare {
     /// Formats the square in the regular notation (as in, `e4`).
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
@@ -1023,6 +1044,7 @@ impl Display for UciSquare {
     }
 }
 
+#[cfg(not(feature = "chess"))]
 impl Default for UciSquare {
     /// Default square is an invalid square with a file of `\0` and the rank of `0`.
     fn default() -> Self {
@@ -1034,6 +1056,7 @@ impl Default for UciSquare {
 }
 
 /// Representation of a chess move.
+#[cfg(not(feature = "chess"))]
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciMove {
     /// The source square.
@@ -1046,6 +1069,7 @@ pub struct UciMove {
     pub promotion: Option<UciPiece>,
 }
 
+#[cfg(not(feature = "chess"))]
 impl UciMove {
     /// Create a regular, non-promotion move from the `from` square to the `to` square.
     pub fn from_to(from: UciSquare, to: UciSquare) -> UciMove {
@@ -1057,6 +1081,7 @@ impl UciMove {
     }
 }
 
+#[cfg(not(feature = "chess"))]
 impl Display for UciMove {
     /// Formats the move in the UCI move notation.
     ///
