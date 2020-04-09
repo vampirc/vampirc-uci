@@ -14,6 +14,12 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+#[cfg(feature = "chess")]
+pub use chess::ChessMove;
+#[cfg(feature = "chess")]
+pub use chess::Piece;
+#[cfg(feature = "chess")]
+pub use chess::Square;
 pub use pest::error::Error;
 
 // pub use self::parser::parse;
