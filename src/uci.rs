@@ -61,6 +61,7 @@ pub enum UciMessage {
         fen: Option<UciFen>,
 
         /// A list of moves to apply to the position.
+        #[cfg(not(feature = "chess"))]
         moves: Vec<UciMove>,
     },
 

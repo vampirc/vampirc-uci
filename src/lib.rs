@@ -8,6 +8,8 @@
 //! See the [README.md](https://github.com/vampirc/vampirc-uci/blob/master/README.md) file for usage instructions.
 
 
+#[cfg(feature = "chess")]
+extern crate chess;
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
