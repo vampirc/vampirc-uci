@@ -133,6 +133,10 @@ pub enum UciMessage {
         best_move: ChessMove,
 
         /// The move the engine would like to ponder on.
+        #[cfg(not(feature = "chess"))]
+        ponder: Option<UciMove>,
+
+        /// The move the engine would like to ponder on.
         #[cfg(feature = "chess")]
         ponder: Option<ChessMove>,
     },
@@ -233,6 +237,24 @@ impl UciMessage {
     /// Constructs a `bestmove` GUI-bound message _with_ the ponder move.
     #[cfg(not(feature = "chess"))]
     pub fn best_move_with_ponder(best_move: UciMove, ponder: UciMove) -> UciMessage {
+        UciMessage::BestMove {
+            best_move,
+            ponder: Some(ponder),
+        }
+    }
+
+    /// Constructs a `bestmove` GUI-bound message without the ponder move.
+    #[cfg(feature = "chess")]
+    pub fn best_move(best_move: ChessMove) -> UciMessage {
+        UciMessage::BestMove {
+            best_move,
+            ponder: None,
+        }
+    }
+
+    /// Constructs a `bestmove` GUI-bound message _with_ the ponder move.
+    #[cfg(feature = "chess")]
+    pub fn best_move_with_ponder(best_move: ChessMove, ponder: ChessMove) -> UciMessage {
         UciMessage::BestMove {
             best_move,
             ponder: Some(ponder),
