@@ -7,9 +7,15 @@
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
+#[cfg(feature = "chess")]
+use chess::ChessMove;
 use pest::error::Error as PestError;
 
-use crate::parser::Rule;
+//use crate::parser::Rule;
+
+// TODO throw away
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub struct Rule {}
 
 /// Specifies whether a message is engine- or GUI-bound.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
@@ -63,6 +69,10 @@ pub enum UciMessage {
         /// A list of moves to apply to the position.
         #[cfg(not(feature = "chess"))]
         moves: Vec<UciMove>,
+
+        /// A list of moves to apply to the position.
+        #[cfg(feature = "chess")]
+        moves: Vec<ChessMove>,
     },
 
     /// The `setoption` engine-bound message.
@@ -118,9 +128,13 @@ pub enum UciMessage {
         #[cfg(not(feature = "chess"))]
         best_move: UciMove,
 
+        /// The move the engine thinks is the best one in the position.
+        #[cfg(feature = "chess")]
+        best_move: ChessMove,
+
         /// The move the engine would like to ponder on.
-        #[cfg(not(feature = "chess"))]
-        ponder: Option<UciMove>,
+        #[cfg(feature = "chess")]
+        ponder: Option<ChessMove>,
     },
 
     /// The `copyprotection` GUI-bound message.
@@ -224,6 +238,8 @@ impl UciMessage {
             ponder: Some(ponder),
         }
     }
+
+    // TODO replace the above two methods with a chess crate variant
 
     /// Constructs an `info string ...` message.
     pub fn info_string(s: String) -> UciMessage {
@@ -443,7 +459,6 @@ impl Serializable for UciMessage {
             },
             UciMessage::UciOk => String::from("uciok"),
             UciMessage::ReadyOk => String::from("readyok"),
-            #[cfg(not(feature = "chess"))]
             UciMessage::BestMove { best_move, ponder } => {
                 let mut s = String::from(format!("bestmove {}", *best_move));
 
@@ -540,6 +555,10 @@ pub struct UciSearchControl {
     #[cfg(not(feature = "chess"))]
     pub search_moves: Vec<UciMove>,
 
+    /// Limits the search to these moves.
+    #[cfg(feature = "chess")]
+    pub search_moves: Vec<ChessMove>,
+
     /// Search for mate in this many moves.
     pub mate: Option<u8>,
 
@@ -554,7 +573,6 @@ impl UciSearchControl {
     /// Creates an `UciSearchControl` with `depth` set to the parameter and everything else set to empty or `None`.
     pub fn depth(depth: u8) -> UciSearchControl {
         UciSearchControl {
-            #[cfg(not(feature = "chess"))]
             search_moves: vec![],
             mate: None,
             depth: Some(depth),
@@ -565,7 +583,6 @@ impl UciSearchControl {
     /// Creates an `UciSearchControl` with `mate` set to the parameter and everything else set to empty or `None`.
     pub fn mate(mate: u8) -> UciSearchControl {
         UciSearchControl {
-            #[cfg(not(feature = "chess"))]
             search_moves: vec![],
             mate: Some(mate),
             depth: None,
@@ -576,7 +593,6 @@ impl UciSearchControl {
     /// Creates an `UciSearchControl` with `nodes` set to the parameter and everything else set to empty or `None`.
     pub fn nodes(nodes: u64) -> UciSearchControl {
         UciSearchControl {
-            #[cfg(not(feature = "chess"))]
             search_moves: vec![],
             mate: None,
             depth: None,
@@ -594,7 +610,6 @@ impl Default for UciSearchControl {
     /// Creates an empty `UciSearchControl`.
     fn default() -> Self {
         UciSearchControl {
-            #[cfg(not(feature = "chess"))]
             search_moves: vec![],
             mate: None,
             depth: None,
@@ -774,7 +789,12 @@ pub enum UciInfoAttribute {
     Nodes(u64),
 
     /// The `info pv` message (best line move sequence).
+    #[cfg(not(feature = "chess"))]
     Pv(Vec<UciMove>),
+
+    /// The `info pv` message (best line move sequence).
+    #[cfg(feature = "chess")]
+    Pv(Vec<ChessMove>),
 
     /// The `info pv ... multipv` message (the pv line number in a multi pv sequence).
     MultiPv(u16),
@@ -797,6 +817,10 @@ pub enum UciInfoAttribute {
     /// The `info currmove` message (current move).
     #[cfg(not(feature = "chess"))]
     CurrMove(UciMove),
+
+    /// The `info currmove` message (current move).
+    #[cfg(feature = "chess")]
+    CurrMove(ChessMove),
 
     /// The `info currmovenum` message (current move number).
     CurrMoveNum(u16),
@@ -824,6 +848,10 @@ pub enum UciInfoAttribute {
     #[cfg(not(feature = "chess"))]
     Refutation(Vec<UciMove>),
 
+    /// The `info refutation` message (the first move is the move being refuted).
+    #[cfg(feature = "chess")]
+    Refutation(Vec<ChessMove>),
+
     /// The `info currline` message (current line being calculated on a CPU).
     CurrLine {
         /// The CPU number calculating this line.
@@ -832,6 +860,10 @@ pub enum UciInfoAttribute {
         /// The line being calculated.
         #[cfg(not(feature = "chess"))]
         line: Vec<UciMove>,
+
+        /// The line being calculated.
+        #[cfg(feature = "chess")]
+        line: Vec<ChessMove>,
     },
 
     /// Any other info line in the format `(name, value)`.
@@ -918,7 +950,6 @@ impl Serializable for UciInfoAttribute {
                     s += " upperbound";
                 }
             },
-            #[cfg(not(feature = "chess"))]
             UciInfoAttribute::CurrMove(uci_move) => s += &format!(" {}", *uci_move),
             UciInfoAttribute::CurrMoveNum(num) => s += &format!(" {}", *num),
             UciInfoAttribute::HashFull(permill) => s += &format!(" {}", *permill),
@@ -926,7 +957,6 @@ impl Serializable for UciInfoAttribute {
             UciInfoAttribute::TbHits(hits) | UciInfoAttribute::SbHits(hits) => s += &format!(" {}", *hits),
             UciInfoAttribute::CpuLoad(load) => s += &format!(" {}", *load),
             UciInfoAttribute::String(string) => s += &format!(" {}", string),
-            #[cfg(not(feature = "chess"))]
             UciInfoAttribute::CurrLine { cpu_nr, line } => {
                 if let Some(c) = cpu_nr {
                     s += &format!(" cpunr {}", *c);
