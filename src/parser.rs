@@ -1109,6 +1109,7 @@ mod tests {
         assert_eq!(ml[0], UciMessage::Quit);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_position_startpos() {
         let ml = parse_strict("position startpos moves e2e4 e7e5\r\n").unwrap();
@@ -1135,6 +1136,7 @@ mod tests {
         assert_eq!(ml[0], pos);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_position_startpos_as_fen() {
         let ml = parse_strict(
@@ -1161,6 +1163,7 @@ mod tests {
     }
 
     // 2k5/6PR/8/8/2b4P/8/6K1/8 w - -
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_position_endgame() {
         let ml =
@@ -1298,6 +1301,7 @@ mod tests {
         assert_eq!(ml[0], result);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_nodes_searchmoves() {
         let ml = parse_strict("go nodes 79093455456 searchmoves e2e4 d2d4 g2g1n\n").unwrap();
@@ -1326,6 +1330,7 @@ mod tests {
         assert_eq!(ml[0], result);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_go_full_example() {
         let ml =
@@ -1418,7 +1423,7 @@ mod tests {
     }
 
     // bestmove g1f3
-
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_bestmove() {
         let ml = parse_strict("bestmove  g1f3\n").unwrap();
@@ -1438,7 +1443,7 @@ mod tests {
     }
 
     // bestmove g1f3 ponder d8f6
-
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_bestmove_with_ponder() {
         let ml = parse_strict("bestmove g1f3 ponder d8f6\n").unwrap();
@@ -1797,6 +1802,7 @@ mod tests {
         assert_eq!(m, ml[0]);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_parse_info_currmove() {
         let ml = parse_strict("info currmove a7a8q\n").unwrap();
@@ -1810,6 +1816,7 @@ mod tests {
         assert_eq!(m, ml[0]);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_parse_info_pv() {
         let ml = parse_strict("info pv e2e4 e7e5 g1f3\n").unwrap();
@@ -1823,6 +1830,7 @@ mod tests {
         assert_eq!(m, ml[0]);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_parse_info_refutation() {
         let ml = parse_strict("info refutation d1h5 g6h5\n").unwrap();
@@ -1835,6 +1843,7 @@ mod tests {
         assert_eq!(m, ml[0]);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_currline_no_cpu_nr() {
         let ml = parse_strict("info currline d1h5 g6h5\n").unwrap();
@@ -1850,6 +1859,7 @@ mod tests {
         assert_eq!(m, ml[0]);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_currline_with_cpu_nr() {
         let ml = parse_strict("info currline 1 d1h5 g6h5\n").unwrap();
@@ -1865,6 +1875,7 @@ mod tests {
         assert_eq!(m, ml[0]);
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_currline_multi_cpu_nr() {
         let ml = parse_strict("info currline 1 d1h5 g6h5 currline 2 e2e4 currline 3 d2d4 d7d5\n")
@@ -1948,6 +1959,7 @@ mod tests {
     }
 
     // info score cp 13  depth 1 nodes 13 time 15 pv f1b5
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_multi1() {
         let ml = parse_strict("info score cp 13  depth 1 nodes 13 time 15 pv f1b5\n").unwrap();
@@ -1986,6 +1998,7 @@ mod tests {
     }
 
     // info score cp 20  depth 3 nodes 423 time 15 pv f1c4 g8f6 b1c3
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_multi3() {
         let ml = parse_strict("info score cp 20  depth 3 nodes 423 time 15 pv f1c4 g8f6 b1c3 \n").unwrap();

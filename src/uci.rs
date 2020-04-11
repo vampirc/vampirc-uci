@@ -5,6 +5,7 @@
 
 
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
+#[cfg(not(feature = "chess"))]
 use std::str::FromStr;
 
 #[cfg(feature = "chess")]
@@ -1256,11 +1257,13 @@ mod tests {
         assert_eq!(UciMessage::ReadyOk.serialize().as_str(), "readyok");
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_bestmove() {
         assert_eq!(UciMessage::best_move(UciMove::from_to(UciSquare::from('a', 1), UciSquare::from('a', 7))).serialize().as_str(), "bestmove a1a7");
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_bestmove_with_options() {
         assert_eq!(UciMessage::best_move_with_ponder(UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('a', 5)),
@@ -1353,6 +1356,7 @@ mod tests {
     }
 
     // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_pv() {
         let attributes: Vec<UciInfoAttribute> = vec![
@@ -1374,6 +1378,7 @@ mod tests {
     }
 
     // info depth 5 seldepth 5 multipv 1 score cp -5 nodes 1540 nps 54 tbhits 0 time 28098 pv a8b6 e3b6 b1b6 a5a7 e2e3
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_multipv() {
         let attributes: Vec<UciInfoAttribute> = vec![
@@ -1431,6 +1436,7 @@ mod tests {
         assert_eq!(m.serialize(), "info score mate -3");
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_currmove() {
         let attributes: Vec<UciInfoAttribute> = vec![
@@ -1445,6 +1451,7 @@ mod tests {
         assert_eq!(m.serialize(), "info currmove a5c3");
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_currmovenum() {
         let attributes: Vec<UciInfoAttribute> = vec![
@@ -1516,6 +1523,7 @@ mod tests {
         assert_eq!(m.serialize(), "info string Invalid move: d6e1 - violates chess rules");
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_refutation() {
         let attributes: Vec<UciInfoAttribute> = vec![
@@ -1536,6 +1544,7 @@ mod tests {
         assert_eq!(m.serialize(), "info refutation d1h5 g6h5");
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_currline() {
         let attributes: Vec<UciInfoAttribute> = vec![
