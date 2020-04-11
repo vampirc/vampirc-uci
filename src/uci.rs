@@ -1225,6 +1225,8 @@ impl AsRef<[u8]> for ByteVecUciMessage {
 
 #[cfg(test)]
 mod tests {
+    use chess::Square;
+
     use super::*;
 
     #[test]
@@ -1263,11 +1265,25 @@ mod tests {
         assert_eq!(UciMessage::best_move(UciMove::from_to(UciSquare::from('a', 1), UciSquare::from('a', 7))).serialize().as_str(), "bestmove a1a7");
     }
 
+    #[cfg(feature = "chess")]
+    #[test]
+    fn test_serialize_bestmove() {
+        assert_eq!(UciMessage::best_move(ChessMove::new(Square::A1, Square::A7, None)).serialize().as_str(), "bestmove a1a7");
+    }
+
     #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_bestmove_with_options() {
         assert_eq!(UciMessage::best_move_with_ponder(UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('a', 5)),
                                                      UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('d', 6))).serialize().as_str(), "bestmove b4a5 ponder b4d6");
+    }
+
+    #[cfg(feature = "chess")]
+    #[test]
+    fn test_serialize_bestmove_with_options() {
+        assert_eq!(UciMessage::best_move_with_ponder(
+            ChessMove::new(Square::B4, Square::A5, None), ChessMove::new(Square::B4, Square::D6, None),
+        ).serialize().as_str(), "bestmove b4a5 ponder b4d6");
     }
 
     #[test]
@@ -1356,7 +1372,6 @@ mod tests {
     }
 
     // info depth 2 score cp 214 time 1242 nodes 2124 nps 34928 pv e2e4 e7e5 g1f3
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_pv() {
         let attributes: Vec<UciInfoAttribute> = vec![
@@ -1365,11 +1380,18 @@ mod tests {
             UciInfoAttribute::Time(1242),
             UciInfoAttribute::Nodes(2124),
             UciInfoAttribute::Nps(34928),
-            UciInfoAttribute::Pv(vec![
+            #[cfg(not(feature = "chess"))]
+                UciInfoAttribute::Pv(vec![
                 UciMove::from_to(UciSquare::from('e', 2), UciSquare::from('e', 4)),
                 UciMove::from_to(UciSquare::from('e', 7), UciSquare::from('e', 5)),
                 UciMove::from_to(UciSquare::from('g', 1), UciSquare::from('f', 3)),
-            ])
+            ]),
+            #[cfg(feature = "chess")]
+                UciInfoAttribute::Pv(vec![
+                ChessMove::new(Square::E2, Square::E4, None),
+                ChessMove::new(Square::E7, Square::E5, None),
+                ChessMove::new(Square::G1, Square::F3, None),
+            ]),
         ];
 
         let m = UciMessage::Info(attributes);
@@ -1378,7 +1400,6 @@ mod tests {
     }
 
     // info depth 5 seldepth 5 multipv 1 score cp -5 nodes 1540 nps 54 tbhits 0 time 28098 pv a8b6 e3b6 b1b6 a5a7 e2e3
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_multipv() {
         let attributes: Vec<UciInfoAttribute> = vec![
@@ -1390,12 +1411,21 @@ mod tests {
             UciInfoAttribute::Nps(54),
             UciInfoAttribute::TbHits(0),
             UciInfoAttribute::Time(28098),
-            UciInfoAttribute::Pv(vec![
+            #[cfg(not(feature = "chess"))]
+                UciInfoAttribute::Pv(vec![
                 UciMove::from_to(UciSquare::from('a', 8), UciSquare::from('b', 6)),
                 UciMove::from_to(UciSquare::from('e', 3), UciSquare::from('b', 6)),
                 UciMove::from_to(UciSquare::from('b', 1), UciSquare::from('b', 6)),
                 UciMove::from_to(UciSquare::from('a', 5), UciSquare::from('a', 7)),
                 UciMove::from_to(UciSquare::from('e', 2), UciSquare::from('e', 3)),
+            ]),
+            #[cfg(feature = "chess")]
+                UciInfoAttribute::Pv(vec![
+                ChessMove::new(Square::A8, Square::B6, None),
+                ChessMove::new(Square::E3, Square::B6, None),
+                ChessMove::new(Square::B1, Square::B6, None),
+                ChessMove::new(Square::A5, Square::A7, None),
+                ChessMove::new(Square::E2, Square::E3, None),
             ])
         ];
 
@@ -1436,14 +1466,19 @@ mod tests {
         assert_eq!(m.serialize(), "info score mate -3");
     }
 
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_currmove() {
-        let attributes: Vec<UciInfoAttribute> = vec![
+        #[cfg(not(feature = "chess"))]
+            let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::CurrMove(UciMove::from_to(
                 UciSquare::from('a', 5),
                 UciSquare::from('c', 3),
             ))
+        ];
+
+        #[cfg(feature = "chess")]
+            let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrMove(ChessMove::new(Square::A5, Square::C3, None))
         ];
 
         let m = UciMessage::Info(attributes);
@@ -1451,14 +1486,20 @@ mod tests {
         assert_eq!(m.serialize(), "info currmove a5c3");
     }
 
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_currmovenum() {
-        let attributes: Vec<UciInfoAttribute> = vec![
+        #[cfg(not(feature = "chess"))]
+            let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::CurrMove(UciMove::from_to(
                 UciSquare::from('a', 2),
                 UciSquare::from('f', 2),
             )),
+            UciInfoAttribute::CurrMoveNum(2)
+        ];
+
+        #[cfg(feature = "chess")]
+            let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrMove(ChessMove::new(Square::A2, Square::F2, None)),
             UciInfoAttribute::CurrMoveNum(2)
         ];
 
@@ -1523,9 +1564,9 @@ mod tests {
         assert_eq!(m.serialize(), "info string Invalid move: d6e1 - violates chess rules");
     }
 
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_refutation() {
+        #[cfg(not(feature = "chess"))]
         let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::Refutation(vec![
                 UciMove::from_to(
@@ -1539,15 +1580,23 @@ mod tests {
             ])
         ];
 
+        #[cfg(feature = "chess")]
+            let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Refutation(vec![
+                ChessMove::new(Square::D1, Square::H5, None),
+                ChessMove::new(Square::G6, Square::H5, None),
+            ])
+        ];
+
         let m = UciMessage::Info(attributes);
 
         assert_eq!(m.serialize(), "info refutation d1h5 g6h5");
     }
 
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_info_currline() {
-        let attributes: Vec<UciInfoAttribute> = vec![
+        #[cfg(not(feature = "chess"))]
+            let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::CurrLine {
                 cpu_nr: Some(1),
                 line: vec![
@@ -1559,6 +1608,17 @@ mod tests {
                         UciSquare::from('g', 6),
                         UciSquare::from('h', 5),
                     )
+                ],
+            }
+        ];
+
+        #[cfg(feature = "chess")]
+            let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrLine {
+                cpu_nr: Some(1),
+                line: vec![
+                    ChessMove::new(Square::D1, Square::H5, None),
+                    ChessMove::new(Square::G6, Square::H5, None),
                 ],
             }
         ];
