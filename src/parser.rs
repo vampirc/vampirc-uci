@@ -1109,31 +1109,48 @@ mod tests {
         assert_eq!(ml[0], UciMessage::Quit);
     }
 
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_position_startpos() {
         let ml = parse_strict("position startpos moves e2e4 e7e5\r\n").unwrap();
         assert_eq!(ml.len(), 1);
 
-        let m1 = UciMove {
-            from: UciSquare { file: 'e', rank: 2 },
-            to: UciSquare { file: 'e', rank: 4 },
-            promotion: None,
-        };
+        #[cfg(not(feature = "chess"))]
+            {
+                let m1 = UciMove {
+                    from: UciSquare { file: 'e', rank: 2 },
+                    to: UciSquare { file: 'e', rank: 4 },
+                    promotion: None,
+                };
 
-        let m2 = UciMove {
-            from: UciSquare { file: 'e', rank: 7 },
-            to: UciSquare { file: 'e', rank: 5 },
-            promotion: None,
-        };
+                let m2 = UciMove {
+                    from: UciSquare { file: 'e', rank: 7 },
+                    to: UciSquare { file: 'e', rank: 5 },
+                    promotion: None,
+                };
 
-        let pos = UciMessage::Position {
-            startpos: true,
-            fen: None,
-            moves: vec![m1, m2],
-        };
+                let pos = UciMessage::Position {
+                    startpos: true,
+                    fen: None,
+                    moves: vec![m1, m2],
+                };
 
-        assert_eq!(ml[0], pos);
+                assert_eq!(ml[0], pos);
+            }
+
+        #[cfg(feature = "chess")]
+            {
+                let m1 = ChessMove::new(Square::E2, Square::E4, None);
+                let m2 = ChessMove::new(Square::E7, Square::E5, None);
+
+
+                let pos = UciMessage::Position {
+                    startpos: true,
+                    fen: None,
+                    moves: vec![m1, m2],
+                };
+
+                assert_eq!(ml[0], pos);
+            }
     }
 
     #[cfg(not(feature = "chess"))]

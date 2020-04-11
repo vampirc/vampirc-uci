@@ -1225,6 +1225,7 @@ impl AsRef<[u8]> for ByteVecUciMessage {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "chess")]
     use chess::Square;
 
     use super::*;
