@@ -4,16 +4,22 @@
 //! Behind the scenes, it uses the [PEST parser](https://github.com/pest-parser/pest). The corresponding PEG grammar is
 //! available [here](https://github.com/vampirc/vampirc-uci/blob/master/res/uci.pest).
 
+#[cfg(feature = "chess")]
+use std::fmt::Error as FmtError;
+#[cfg(not(feature = "chess"))]
 use std::str::FromStr;
 
 use pest::error::Error;
 use pest::iterators::Pair;
 use pest::Parser;
 
+#[cfg(feature = "chess")]
+use crate::chess::{ChessMove, Piece, Square};
 use crate::uci::{
-    MessageList, UciFen, UciInfoAttribute, UciMessage, UciMove, UciPiece, UciSearchControl,
-    UciSquare, UciTimeControl,
+    MessageList, UciFen, UciInfoAttribute, UciMessage, UciSearchControl, UciTimeControl,
 };
+#[cfg(not(feature = "chess"))]
+use crate::uci::{UciMove, UciPiece, UciSquare};
 use crate::uci::ProtectionState;
 use crate::UciOptionConfig;
 
@@ -176,7 +182,8 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                 Rule::position => {
                     let mut startpos = false;
                     let mut fen: Option<UciFen> = None;
-                    let mut moves: Vec<UciMove> = Default::default();
+                    #[cfg(not(feature = "chess"))] let mut moves: Vec<UciMove> = Default::default();
+                    #[cfg(feature = "chess")] let mut moves: Vec<ChessMove> = Default::default();
 
                     for sp in pair.into_inner() {
                         match sp.as_rule() {
@@ -319,8 +326,10 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                 Rule::uciok => UciMessage::UciOk,
                 Rule::readyok => UciMessage::ReadyOk,
                 Rule::bestmove => {
-                    let mut bm: Option<UciMove> = None;
-                    let mut ponder: Option<UciMove> = None;
+                    #[cfg(not(feature = "chess"))] let mut bm: Option<UciMove> = None;
+                    #[cfg(not(feature = "chess"))] let mut ponder: Option<UciMove> = None;
+                    #[cfg(feature = "chess")] let mut bm: Option<ChessMove> = None;
+                    #[cfg(feature = "chess")] let mut ponder: Option<ChessMove> = None;
                     for sp in pair.into_inner() {
                         match sp.as_rule() {
                             Rule::a_move => {
@@ -573,7 +582,8 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                             break;
                                         }
                                         Rule::info_pv => {
-                                            let mut mv: Vec<UciMove> = vec![];
+                                            #[cfg(not(feature = "chess"))] let mut mv: Vec<UciMove> = vec![];
+                                            #[cfg(feature = "chess")] let mut mv: Vec<ChessMove> = vec![];
                                             for spii in spi.into_inner() {
                                                 match spii.as_rule() {
                                                     Rule::a_move => {
@@ -587,7 +597,8 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                             break;
                                         }
                                         Rule::info_refutation => {
-                                            let mut mv: Vec<UciMove> = vec![];
+                                            #[cfg(not(feature = "chess"))] let mut mv: Vec<UciMove> = vec![];
+                                            #[cfg(feature = "chess")] let mut mv: Vec<ChessMove> = vec![];
                                             for spii in spi.into_inner() {
                                                 match spii.as_rule() {
                                                     Rule::a_move => {
@@ -601,7 +612,8 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                             break;
                                         }
                                         Rule::info_currline => {
-                                            let mut mv: Vec<UciMove> = vec![];
+                                            #[cfg(not(feature = "chess"))] let mut mv: Vec<UciMove> = vec![];
+                                            #[cfg(feature = "chess")] let mut mv: Vec<ChessMove> = vec![];
                                             let mut cpu_nr: Option<u16> = None;
                                             for spii in spi.into_inner() {
                                                 match spii.as_rule() {
@@ -747,6 +759,7 @@ fn parse_id_text(id_pair: Pair<Rule>, rule: Rule) -> UciMessage {
     unreachable!();
 }
 
+#[cfg(not(feature = "chess"))]
 fn parse_square(sq_pair: Pair<Rule>) -> UciSquare {
     let mut file: char = '\0';
     let mut rank: u8 = 0;
@@ -769,6 +782,31 @@ fn parse_square(sq_pair: Pair<Rule>) -> UciSquare {
     }
 
     UciSquare::from(file, rank)
+}
+
+#[cfg(feature = "chess")]
+fn parse_square(sq_pair: Pair<Rule>) -> Square {
+    let mut file: char = '\0';
+    let mut rank: u8 = 0;
+
+    match sq_pair.as_rule() {
+        Rule::square => {
+            for sp in sq_pair.into_inner() {
+                match sp.as_rule() {
+                    Rule::file => {
+                        file = sp.as_span().as_str().chars().into_iter().next().unwrap();
+                    }
+                    Rule::rank => {
+                        rank = str::parse(sp.as_span().as_str()).unwrap();
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        }
+        _ => unreachable!(),
+    }
+
+    Square::from_string(file.to_string() + rank.to_string().as_str()).unwrap()
 }
 
 fn parse_milliseconds(pair: Pair<Rule>) -> u64 {
@@ -814,6 +852,7 @@ fn parse_i64(pair: Pair<Rule>, rule: Rule) -> i64 {
     0
 }
 
+#[cfg(not(feature = "chess"))]
 fn parse_a_move(sp: Pair<Rule>) -> UciMove {
     let mut from_sq = UciSquare::default();
     let mut to_sq = UciSquare::default();
@@ -838,6 +877,43 @@ fn parse_a_move(sp: Pair<Rule>) -> UciMove {
         from: from_sq,
         to: to_sq,
         promotion,
+    }
+}
+
+#[cfg(feature = "chess")]
+fn parse_a_move(sp: Pair<Rule>) -> ChessMove {
+    let mut from_sq = Square::default();
+    let mut to_sq = Square::default();
+    let mut promotion: Option<Piece> = None;
+
+    for move_token in sp.into_inner() {
+        match move_token.as_rule() {
+            Rule::from_sq => {
+                from_sq = parse_square(move_token.into_inner().next().unwrap());
+            }
+            Rule::to_sq => {
+                to_sq = parse_square(move_token.into_inner().next().unwrap());
+            }
+            Rule::promotion => {
+                promotion = Some(piece_from_str(move_token.as_span().as_str()).unwrap());
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    ChessMove::new(from_sq, to_sq, promotion)
+}
+
+#[cfg(feature = "chess")]
+fn piece_from_str(s: &str) -> Result<Piece, FmtError> {
+    match s.to_ascii_lowercase().as_str() {
+        "n" => Ok(Piece::Knight),
+        "p" => Ok(Piece::Pawn),
+        "b" => Ok(Piece::Bishop),
+        "r" => Ok(Piece::Rook),
+        "k" => Ok(Piece::King),
+        "q" => Ok(Piece::Queen),
+        _ => Err(FmtError)
     }
 }
 

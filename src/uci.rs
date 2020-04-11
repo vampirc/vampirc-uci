@@ -11,11 +11,7 @@ use std::str::FromStr;
 use chess::ChessMove;
 use pest::error::Error as PestError;
 
-//use crate::parser::Rule;
-
-// TODO throw away
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
-pub struct Rule {}
+use crate::parser::Rule;
 
 /// Specifies whether a message is engine- or GUI-bound.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]

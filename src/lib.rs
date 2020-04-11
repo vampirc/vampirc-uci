@@ -22,10 +22,10 @@ pub use chess::Piece;
 pub use chess::Square;
 pub use pest::error::Error;
 
-// pub use self::parser::parse;
-// pub use self::parser::parse_strict;
-// pub use self::parser::parse_with_unknown;
-// pub use self::parser::Rule;
+pub use self::parser::parse;
+pub use self::parser::parse_strict;
+pub use self::parser::parse_with_unknown;
+pub use self::parser::Rule;
 pub use self::uci::ByteVecUciMessage;
 pub use self::uci::CommunicationDirection;
 pub use self::uci::MessageList;
@@ -45,7 +45,7 @@ pub use self::uci::UciSquare;
 pub use self::uci::UciTimeControl;
 
 pub mod uci;
-// pub mod parser;
+pub mod parser;
 
 #[cfg(test)]
 mod tests {
