@@ -109,8 +109,8 @@ crate's representation of those concepts. Full table below:
 ---
 **WARNING**
 
-`chess` is a fairly heavy create with some heavy dependencies, so probably only use this if you're building your own
-chess engine or tooling with it. 
+`chess` is a fairly heavy create with some heavy dependencies, so probably only use the integration feature if you're 
+building your own chess engine or tooling with it. 
 
 ---
 
