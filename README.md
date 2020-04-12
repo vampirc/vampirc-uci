@@ -17,7 +17,7 @@ To use the crate, declare a dependency on it in your Cargo.toml file:
 
 ```toml
 [dependencies]
-vampirc-uci = "0.8"
+vampirc-uci = "0.9"
 ```
 
 Then reference the `vampirc_uci` crate in your crate root:
@@ -86,16 +86,46 @@ for m in messages {
     println!(message); // Outputs "option name Selectivity type spin default 2 min 0 max 4"
 ```
 
+## Integration with the chess crate (since 0.9.0)
+
+This library (optionally) integrates with the [chess crate](https://crates.io/crates/chess). First, include the 
+`vampirc-uci` crate into your project with the `chess` feature:
+
+```toml
+    [dependencies.vampirc_uci]
+    version = "0.9"
+    features = ["chess"]
+```
+
+This will cause the vampirc_uci's internal representation of moves, squares and pieces to be replaced with `chess` 
+crate's representation of those concepts. Full table below:
+
+| vampirc_uci 's representation | chess' representation |
+| ----------------------------- | --------------------- |
+| `vampirc_uci::UciSquare`      | `chess::Square`       |
+| `vampirc_uci::UciPiece`       | `chess::Piece`        |
+| `vampirc_uci::UciMove`        | `chess::ChessMove`    |
+
+---
+**WARNING**
+
+`chess` is a fairly heavy create with some heavy dependencies, so probably only use this if you're building your own
+chess engine or tooling with it. 
+
+---
+
+
 ## API
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
-### New in 0.8.4
+### New in 0.9
+* (Optional) integration with [chess crate](https://crates.io/crates/chess) (see above).
 * Removed the explicit Safe and Sync implementations.
 
 ### New in 0.8.3
 
-* Added the `UciMessage::info_string() utility function`.
+* Added the `UciMessage::info_string()` utility function.
 * Allowed the empty `go` command (see [Parser cannot parse "go\n"](https://github.com/vampirc/vampirc-uci/issues/9)).
 
 ### New in 0.8.2
