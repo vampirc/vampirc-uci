@@ -29,7 +29,8 @@ extern crate vampirc_uci;
 
 1. Import either the `parse(..)` method or the `parse_strict(..)` method. The difference between them is that `parse_strict(..)`
 will return a `pest::error::Error` if any of the input is unrecognized or violates the rules of the PEG grammar, whereas `parse`
-will simply ignore any such input. The latter is the approach recommended by the protocol specification.
+will simply ignore any such input. The latter is the approach recommended by the protocol specification. The third option is 
+`parse_with_unknown(..)`, which will pack unrecognized input into an `UciMessage::Unknown` variant.
 
 ```rust
 use vampirc_uci::parse;
@@ -119,7 +120,7 @@ building your own chess engine or tooling with it.
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
-### New in 0.9
+### New in 0.9.0
 * (Optional) integration with [chess crate](https://crates.io/crates/chess) (see above).
 * Removed the explicit Safe and Sync implementations.
 
