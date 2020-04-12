@@ -5,8 +5,11 @@
 
 
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
+#[cfg(not(feature = "chess"))]
 use std::str::FromStr;
 
+#[cfg(feature = "chess")]
+use chess::ChessMove;
 use pest::error::Error as PestError;
 
 use crate::parser::Rule;
@@ -61,7 +64,12 @@ pub enum UciMessage {
         fen: Option<UciFen>,
 
         /// A list of moves to apply to the position.
+        #[cfg(not(feature = "chess"))]
         moves: Vec<UciMove>,
+
+        /// A list of moves to apply to the position.
+        #[cfg(feature = "chess")]
+        moves: Vec<ChessMove>,
     },
 
     /// The `setoption` engine-bound message.
@@ -114,10 +122,20 @@ pub enum UciMessage {
     /// The `bestmove` GUI-bound message.
     BestMove {
         /// The move the engine thinks is the best one in the position.
+        #[cfg(not(feature = "chess"))]
         best_move: UciMove,
 
+        /// The move the engine thinks is the best one in the position.
+        #[cfg(feature = "chess")]
+        best_move: ChessMove,
+
         /// The move the engine would like to ponder on.
+        #[cfg(not(feature = "chess"))]
         ponder: Option<UciMove>,
+
+        /// The move the engine would like to ponder on.
+        #[cfg(feature = "chess")]
+        ponder: Option<ChessMove>,
     },
 
     /// The `copyprotection` GUI-bound message.
@@ -205,6 +223,7 @@ impl UciMessage {
     }
 
     /// Constructs a `bestmove` GUI-bound message without the ponder move.
+    #[cfg(not(feature = "chess"))]
     pub fn best_move(best_move: UciMove) -> UciMessage {
         UciMessage::BestMove {
             best_move,
@@ -213,12 +232,33 @@ impl UciMessage {
     }
 
     /// Constructs a `bestmove` GUI-bound message _with_ the ponder move.
+    #[cfg(not(feature = "chess"))]
     pub fn best_move_with_ponder(best_move: UciMove, ponder: UciMove) -> UciMessage {
         UciMessage::BestMove {
             best_move,
             ponder: Some(ponder),
         }
     }
+
+    /// Constructs a `bestmove` GUI-bound message without the ponder move.
+    #[cfg(feature = "chess")]
+    pub fn best_move(best_move: ChessMove) -> UciMessage {
+        UciMessage::BestMove {
+            best_move,
+            ponder: None,
+        }
+    }
+
+    /// Constructs a `bestmove` GUI-bound message _with_ the ponder move.
+    #[cfg(feature = "chess")]
+    pub fn best_move_with_ponder(best_move: ChessMove, ponder: ChessMove) -> UciMessage {
+        UciMessage::BestMove {
+            best_move,
+            ponder: Some(ponder),
+        }
+    }
+
+    // TODO replace the above two methods with a chess crate variant
 
     /// Constructs an `info string ...` message.
     pub fn info_string(s: String) -> UciMessage {
@@ -531,7 +571,12 @@ impl UciTimeControl {
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciSearchControl {
     /// Limits the search to these moves.
+    #[cfg(not(feature = "chess"))]
     pub search_moves: Vec<UciMove>,
+
+    /// Limits the search to these moves.
+    #[cfg(feature = "chess")]
+    pub search_moves: Vec<ChessMove>,
 
     /// Search for mate in this many moves.
     pub mate: Option<u8>,
@@ -763,7 +808,12 @@ pub enum UciInfoAttribute {
     Nodes(u64),
 
     /// The `info pv` message (best line move sequence).
+    #[cfg(not(feature = "chess"))]
     Pv(Vec<UciMove>),
+
+    /// The `info pv` message (best line move sequence).
+    #[cfg(feature = "chess")]
+    Pv(Vec<ChessMove>),
 
     /// The `info pv ... multipv` message (the pv line number in a multi pv sequence).
     MultiPv(u16),
@@ -784,7 +834,12 @@ pub enum UciInfoAttribute {
     },
 
     /// The `info currmove` message (current move).
+    #[cfg(not(feature = "chess"))]
     CurrMove(UciMove),
+
+    /// The `info currmove` message (current move).
+    #[cfg(feature = "chess")]
+    CurrMove(ChessMove),
 
     /// The `info currmovenum` message (current move number).
     CurrMoveNum(u16),
@@ -809,7 +864,12 @@ pub enum UciInfoAttribute {
     String(String),
 
     /// The `info refutation` message (the first move is the move being refuted).
+    #[cfg(not(feature = "chess"))]
     Refutation(Vec<UciMove>),
+
+    /// The `info refutation` message (the first move is the move being refuted).
+    #[cfg(feature = "chess")]
+    Refutation(Vec<ChessMove>),
 
     /// The `info currline` message (current line being calculated on a CPU).
     CurrLine {
@@ -817,7 +877,12 @@ pub enum UciInfoAttribute {
         cpu_nr: Option<u16>,
 
         /// The line being calculated.
+        #[cfg(not(feature = "chess"))]
         line: Vec<UciMove>,
+
+        /// The line being calculated.
+        #[cfg(feature = "chess")]
+        line: Vec<ChessMove>,
     },
 
     /// Any other info line in the format `(name, value)`.
@@ -939,6 +1004,7 @@ impl Display for UciInfoAttribute {
 
 /// An enum representing the chess piece types.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[cfg(not(feature = "chess"))]
 pub enum UciPiece {
     Pawn,
     Knight,
@@ -948,6 +1014,7 @@ pub enum UciPiece {
     King,
 }
 
+#[cfg(not(feature = "chess"))]
 impl UciPiece {
     /// Returns a character representing a piece in UCI move notation. Used for specifying promotion in moves.
     ///
@@ -969,6 +1036,7 @@ impl UciPiece {
     }
 }
 
+#[cfg(not(feature = "chess"))]
 impl FromStr for UciPiece {
     type Err = FmtError;
 
@@ -996,6 +1064,7 @@ impl FromStr for UciPiece {
 }
 
 /// A representation of a chessboard square.
+#[cfg(not(feature = "chess"))]
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciSquare {
     /// The file. A character in the range of `a..h`.
@@ -1005,6 +1074,7 @@ pub struct UciSquare {
     pub rank: u8,
 }
 
+#[cfg(not(feature = "chess"))]
 impl UciSquare {
     /// Create a `UciSquare` from file character and a rank number.
     pub fn from(file: char, rank: u8) -> UciSquare {
@@ -1015,6 +1085,7 @@ impl UciSquare {
     }
 }
 
+#[cfg(not(feature = "chess"))]
 impl Display for UciSquare {
     /// Formats the square in the regular notation (as in, `e4`).
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
@@ -1022,6 +1093,7 @@ impl Display for UciSquare {
     }
 }
 
+#[cfg(not(feature = "chess"))]
 impl Default for UciSquare {
     /// Default square is an invalid square with a file of `\0` and the rank of `0`.
     fn default() -> Self {
@@ -1033,6 +1105,7 @@ impl Default for UciSquare {
 }
 
 /// Representation of a chess move.
+#[cfg(not(feature = "chess"))]
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub struct UciMove {
     /// The source square.
@@ -1045,6 +1118,7 @@ pub struct UciMove {
     pub promotion: Option<UciPiece>,
 }
 
+#[cfg(not(feature = "chess"))]
 impl UciMove {
     /// Create a regular, non-promotion move from the `from` square to the `to` square.
     pub fn from_to(from: UciSquare, to: UciSquare) -> UciMove {
@@ -1056,6 +1130,7 @@ impl UciMove {
     }
 }
 
+#[cfg(not(feature = "chess"))]
 impl Display for UciMove {
     /// Formats the move in the UCI move notation.
     ///
@@ -1150,6 +1225,9 @@ impl AsRef<[u8]> for ByteVecUciMessage {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "chess")]
+    use chess::Square;
+
     use super::*;
 
     #[test]
@@ -1182,15 +1260,31 @@ mod tests {
         assert_eq!(UciMessage::ReadyOk.serialize().as_str(), "readyok");
     }
 
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_bestmove() {
         assert_eq!(UciMessage::best_move(UciMove::from_to(UciSquare::from('a', 1), UciSquare::from('a', 7))).serialize().as_str(), "bestmove a1a7");
     }
 
+    #[cfg(feature = "chess")]
+    #[test]
+    fn test_serialize_bestmove() {
+        assert_eq!(UciMessage::best_move(ChessMove::new(Square::A1, Square::A7, None)).serialize().as_str(), "bestmove a1a7");
+    }
+
+    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_serialize_bestmove_with_options() {
         assert_eq!(UciMessage::best_move_with_ponder(UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('a', 5)),
                                                      UciMove::from_to(UciSquare::from('b', 4), UciSquare::from('d', 6))).serialize().as_str(), "bestmove b4a5 ponder b4d6");
+    }
+
+    #[cfg(feature = "chess")]
+    #[test]
+    fn test_serialize_bestmove_with_options() {
+        assert_eq!(UciMessage::best_move_with_ponder(
+            ChessMove::new(Square::B4, Square::A5, None), ChessMove::new(Square::B4, Square::D6, None),
+        ).serialize().as_str(), "bestmove b4a5 ponder b4d6");
     }
 
     #[test]
@@ -1287,11 +1381,18 @@ mod tests {
             UciInfoAttribute::Time(1242),
             UciInfoAttribute::Nodes(2124),
             UciInfoAttribute::Nps(34928),
-            UciInfoAttribute::Pv(vec![
+            #[cfg(not(feature = "chess"))]
+                UciInfoAttribute::Pv(vec![
                 UciMove::from_to(UciSquare::from('e', 2), UciSquare::from('e', 4)),
                 UciMove::from_to(UciSquare::from('e', 7), UciSquare::from('e', 5)),
                 UciMove::from_to(UciSquare::from('g', 1), UciSquare::from('f', 3)),
-            ])
+            ]),
+            #[cfg(feature = "chess")]
+                UciInfoAttribute::Pv(vec![
+                ChessMove::new(Square::E2, Square::E4, None),
+                ChessMove::new(Square::E7, Square::E5, None),
+                ChessMove::new(Square::G1, Square::F3, None),
+            ]),
         ];
 
         let m = UciMessage::Info(attributes);
@@ -1311,12 +1412,21 @@ mod tests {
             UciInfoAttribute::Nps(54),
             UciInfoAttribute::TbHits(0),
             UciInfoAttribute::Time(28098),
-            UciInfoAttribute::Pv(vec![
+            #[cfg(not(feature = "chess"))]
+                UciInfoAttribute::Pv(vec![
                 UciMove::from_to(UciSquare::from('a', 8), UciSquare::from('b', 6)),
                 UciMove::from_to(UciSquare::from('e', 3), UciSquare::from('b', 6)),
                 UciMove::from_to(UciSquare::from('b', 1), UciSquare::from('b', 6)),
                 UciMove::from_to(UciSquare::from('a', 5), UciSquare::from('a', 7)),
                 UciMove::from_to(UciSquare::from('e', 2), UciSquare::from('e', 3)),
+            ]),
+            #[cfg(feature = "chess")]
+                UciInfoAttribute::Pv(vec![
+                ChessMove::new(Square::A8, Square::B6, None),
+                ChessMove::new(Square::E3, Square::B6, None),
+                ChessMove::new(Square::B1, Square::B6, None),
+                ChessMove::new(Square::A5, Square::A7, None),
+                ChessMove::new(Square::E2, Square::E3, None),
             ])
         ];
 
@@ -1359,11 +1469,17 @@ mod tests {
 
     #[test]
     fn test_serialize_info_currmove() {
-        let attributes: Vec<UciInfoAttribute> = vec![
+        #[cfg(not(feature = "chess"))]
+            let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::CurrMove(UciMove::from_to(
                 UciSquare::from('a', 5),
                 UciSquare::from('c', 3),
             ))
+        ];
+
+        #[cfg(feature = "chess")]
+            let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrMove(ChessMove::new(Square::A5, Square::C3, None))
         ];
 
         let m = UciMessage::Info(attributes);
@@ -1373,11 +1489,18 @@ mod tests {
 
     #[test]
     fn test_serialize_info_currmovenum() {
-        let attributes: Vec<UciInfoAttribute> = vec![
+        #[cfg(not(feature = "chess"))]
+            let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::CurrMove(UciMove::from_to(
                 UciSquare::from('a', 2),
                 UciSquare::from('f', 2),
             )),
+            UciInfoAttribute::CurrMoveNum(2)
+        ];
+
+        #[cfg(feature = "chess")]
+            let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrMove(ChessMove::new(Square::A2, Square::F2, None)),
             UciInfoAttribute::CurrMoveNum(2)
         ];
 
@@ -1444,6 +1567,7 @@ mod tests {
 
     #[test]
     fn test_serialize_info_refutation() {
+        #[cfg(not(feature = "chess"))]
         let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::Refutation(vec![
                 UciMove::from_to(
@@ -1457,6 +1581,14 @@ mod tests {
             ])
         ];
 
+        #[cfg(feature = "chess")]
+            let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::Refutation(vec![
+                ChessMove::new(Square::D1, Square::H5, None),
+                ChessMove::new(Square::G6, Square::H5, None),
+            ])
+        ];
+
         let m = UciMessage::Info(attributes);
 
         assert_eq!(m.serialize(), "info refutation d1h5 g6h5");
@@ -1464,7 +1596,8 @@ mod tests {
 
     #[test]
     fn test_serialize_info_currline() {
-        let attributes: Vec<UciInfoAttribute> = vec![
+        #[cfg(not(feature = "chess"))]
+            let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::CurrLine {
                 cpu_nr: Some(1),
                 line: vec![
@@ -1476,6 +1609,17 @@ mod tests {
                         UciSquare::from('g', 6),
                         UciSquare::from('h', 5),
                     )
+                ],
+            }
+        ];
+
+        #[cfg(feature = "chess")]
+            let attributes: Vec<UciInfoAttribute> = vec![
+            UciInfoAttribute::CurrLine {
+                cpu_nr: Some(1),
+                line: vec![
+                    ChessMove::new(Square::D1, Square::H5, None),
+                    ChessMove::new(Square::G6, Square::H5, None),
                 ],
             }
         ];
