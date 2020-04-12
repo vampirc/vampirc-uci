@@ -64,7 +64,7 @@ ply_clock = { counter }
 move_num = { counter }
 
 // GO
-go = ${ ^"go" ~ (WHITESPACE+ | go_time | go_search)+ }
+go = ${ ^"go" ~ (WHITESPACE+ | go_time | go_search)* }
 go_time = { go_ponder | go_infinite | go_movetime | go_timeleft }
 go_ponder = ${ ^"ponder" ~ !non_ws }
 go_infinite = ${ ^"infinite" ~ !non_ws }

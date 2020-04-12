@@ -3,7 +3,7 @@
 Vampirc UCI is a [Universal Chess Interface (UCI) protocol](https://en.wikipedia.org/wiki/Universal_Chess_Interface) parser and
 serializer. 
 
-The UCI protocol is a way for a chess engine to communicate with a chessboard GUI, such as [Cute Chess](https://github.com/cutechess/cutechess).
+The UCI protocol is a way for a chess engine to communicate with a chessboard GUI, such as [Scid vs. PC](http://scidvspc.sourceforge.net/).
 
 The [Vampirc Project](https://vampirc.kejzar.si) is a chess engine and chess library suite, written in Rust. It is named for the
 Slovenian grandmaster [Vasja Pirc](https://en.wikipedia.org/wiki/Vasja_Pirc), and, I guess, vampires? I dunno.
@@ -17,7 +17,7 @@ To use the crate, declare a dependency on it in your Cargo.toml file:
 
 ```toml
 [dependencies]
-vampirc-uci = "0.8"
+vampirc-uci = "0.9"
 ```
 
 Then reference the `vampirc_uci` crate in your crate root:
@@ -86,9 +86,54 @@ for m in messages {
     println!(message); // Outputs "option name Selectivity type spin default 2 min 0 max 4"
 ```
 
+## Integration with the chess crate (since 0.9.0)
+
+This library (optionally) integrates with the [chess crate](https://crates.io/crates/chess). First, include the 
+`vampirc-uci` crate into your project with the `chess` feature:
+
+```toml
+    [dependencies.vampirc_uci]
+    version = "0.9"
+    features = ["chess"]
+```
+
+This will cause the vampirc_uci's internal representation of moves, squares and pieces to be replaced with `chess` 
+crate's representation of those concepts. Full table below:
+
+| vampirc_uci 's representation | chess' representation |
+| ----------------------------- | --------------------- |
+| `vampirc_uci::UciSquare`      | `chess::Square`       |
+| `vampirc_uci::UciPiece`       | `chess::Piece`        |
+| `vampirc_uci::UciMove`        | `chess::ChessMove`    |
+
+---
+**WARNING**
+
+`chess` is a fairly heavy create with some heavy dependencies, so probably only use the integration feature if you're 
+building your own chess engine or tooling with it. 
+
+---
+
+
 ## API
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
+
+### New in 0.9
+* (Optional) integration with [chess crate](https://crates.io/crates/chess) (see above).
+* Removed the explicit Safe and Sync implementations.
+
+### New in 0.8.3
+
+* Added the `UciMessage::info_string()` utility function.
+* Allowed the empty `go` command (see [Parser cannot parse "go\n"](https://github.com/vampirc/vampirc-uci/issues/9)).
+
+### New in 0.8.2
+
+* Added `ByteVecUciMessage` as a `UciMessage` wrapper that keeps the serialized form of the message in the struct as a byte Vector. Useful if
+you need to serialize the same message multiple types or support `AsRef<[u8]>` trait for funnelling the messages into a `futures::Sink` or
+something.
+* Modifications for integration with async [async-std](https://github.com/async-rs/async-std) based [vampirc-io](https://github.com/vampirc/vampirc-io).
 
 ### New in 0.8.1
 
@@ -110,7 +155,7 @@ enum representing all 17 types of messages described by the UCI documentation, a
 
 This crate goes together well with the [vampirc-io](https://github.com/vampirc/vampirc-io) crate, a library for 
 non-blocking communication over standard input and output (which is how UCI communication is usually conducted), 
-based on the [Tokio IO framework](https://github.com/tokio-rs/tokio).
+based on the [async-std framework](https://github.com/async-rs/async-std).
 
 ## Limitations and 1.0
 
