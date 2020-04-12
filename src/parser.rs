@@ -1922,12 +1922,12 @@ mod tests {
         assert_eq!(m, ml[0]);
     }
 
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_currline_no_cpu_nr() {
         let ml = parse_strict("info currline d1h5 g6h5\n").unwrap();
 
-        let m = UciMessage::Info(vec![UciInfoAttribute::CurrLine {
+        #[cfg(not(feature = "chess"))]
+            let m = UciMessage::Info(vec![UciInfoAttribute::CurrLine {
             cpu_nr: None,
             line: vec![
                 UciMove::from_to(UciSquare::from('d', 1), UciSquare::from('h', 5)),
@@ -1935,15 +1935,24 @@ mod tests {
             ],
         }]);
 
+        #[cfg(feature = "chess")]
+            let m = UciMessage::Info(vec![UciInfoAttribute::CurrLine {
+            cpu_nr: None,
+            line: vec![
+                ChessMove::new(Square::D1, Square::H5, None),
+                ChessMove::new(Square::G6, Square::H5, None),
+            ],
+        }]);
+
         assert_eq!(m, ml[0]);
     }
 
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_currline_with_cpu_nr() {
         let ml = parse_strict("info currline 1 d1h5 g6h5\n").unwrap();
 
-        let m = UciMessage::Info(vec![UciInfoAttribute::CurrLine {
+        #[cfg(not(feature = "chess"))]
+            let m = UciMessage::Info(vec![UciInfoAttribute::CurrLine {
             cpu_nr: Some(1),
             line: vec![
                 UciMove::from_to(UciSquare::from('d', 1), UciSquare::from('h', 5)),
@@ -1951,15 +1960,24 @@ mod tests {
             ],
         }]);
 
+        #[cfg(feature = "chess")]
+            let m = UciMessage::Info(vec![UciInfoAttribute::CurrLine {
+            cpu_nr: Some(1),
+            line: vec![
+                ChessMove::new(Square::D1, Square::H5, None),
+                ChessMove::new(Square::G6, Square::H5, None),
+            ],
+        }]);
+
         assert_eq!(m, ml[0]);
     }
 
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_currline_multi_cpu_nr() {
         let ml = parse_strict("info currline 1 d1h5 g6h5 currline 2 e2e4 currline 3 d2d4 d7d5\n")
             .unwrap();
 
+        #[cfg(not(feature = "chess"))]
         let m = UciMessage::Info(vec![
             UciInfoAttribute::CurrLine {
                 cpu_nr: Some(1),
@@ -1980,6 +1998,28 @@ mod tests {
                 line: vec![
                     UciMove::from_to(UciSquare::from('d', 2), UciSquare::from('d', 4)),
                     UciMove::from_to(UciSquare::from('d', 7), UciSquare::from('d', 5)),
+                ],
+            }
+        ]);
+
+        #[cfg(feature = "chess")]
+            let m = UciMessage::Info(vec![
+            UciInfoAttribute::CurrLine {
+                cpu_nr: Some(1),
+                line: vec![
+                    ChessMove::new(Square::D1, Square::H5, None),
+                    ChessMove::new(Square::G6, Square::H5, None),
+                ],
+            },
+            UciInfoAttribute::CurrLine {
+                cpu_nr: Some(2),
+                line: vec![ChessMove::new(Square::E2, Square::E4, None)],
+            },
+            UciInfoAttribute::CurrLine {
+                cpu_nr: Some(3),
+                line: vec![
+                    ChessMove::new(Square::D2, Square::D4, None),
+                    ChessMove::new(Square::D7, Square::D5, None),
                 ],
             }
         ]);
@@ -2038,20 +2078,31 @@ mod tests {
     }
 
     // info score cp 13  depth 1 nodes 13 time 15 pv f1b5
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_multi1() {
         let ml = parse_strict("info score cp 13  depth 1 nodes 13 time 15 pv f1b5\n").unwrap();
         println!("{}", ml[0].serialize());
         assert_eq!(1, ml.len());
 
-        let m = UciMessage::Info(vec![
+        #[cfg(not(feature = "chess"))]
+            let m = UciMessage::Info(vec![
             UciInfoAttribute::from_centipawns(13),
             UciInfoAttribute::Depth(1),
             UciInfoAttribute::Nodes(13),
             UciInfoAttribute::Time(15),
             UciInfoAttribute::Pv(vec![
                 UciMove::from_to(UciSquare::from('f', 1), UciSquare::from('b', 5))
+            ])
+        ]);
+
+        #[cfg(feature = "chess")]
+            let m = UciMessage::Info(vec![
+            UciInfoAttribute::from_centipawns(13),
+            UciInfoAttribute::Depth(1),
+            UciInfoAttribute::Nodes(13),
+            UciInfoAttribute::Time(15),
+            UciInfoAttribute::Pv(vec![
+                ChessMove::new(Square::F1, Square::B5, None)
             ])
         ]);
 
@@ -2077,13 +2128,13 @@ mod tests {
     }
 
     // info score cp 20  depth 3 nodes 423 time 15 pv f1c4 g8f6 b1c3
-    #[cfg(not(feature = "chess"))]
     #[test]
     fn test_info_multi3() {
         let ml = parse_strict("info score cp 20  depth 3 nodes 423 time 15 pv f1c4 g8f6 b1c3 \n").unwrap();
         println!("{}", ml[0].serialize());
         assert_eq!(1, ml.len());
 
+        #[cfg(not(feature = "chess"))]
         let m = UciMessage::Info(vec![
             UciInfoAttribute::from_centipawns(20),
             UciInfoAttribute::Depth(3),
@@ -2093,6 +2144,19 @@ mod tests {
                 UciMove::from_to(UciSquare::from('f', 1), UciSquare::from('c', 4)),
                 UciMove::from_to(UciSquare::from('g', 8), UciSquare::from('f', 6)),
                 UciMove::from_to(UciSquare::from('b', 1), UciSquare::from('c', 3))
+            ])
+        ]);
+
+        #[cfg(feature = "chess")]
+            let m = UciMessage::Info(vec![
+            UciInfoAttribute::from_centipawns(20),
+            UciInfoAttribute::Depth(3),
+            UciInfoAttribute::Nodes(423),
+            UciInfoAttribute::Time(15),
+            UciInfoAttribute::Pv(vec![
+                ChessMove::new(Square::F1, Square::C4, None),
+                ChessMove::new(Square::G8, Square::F6, None),
+                ChessMove::new(Square::B1, Square::C3, None),
             ])
         ]);
 
