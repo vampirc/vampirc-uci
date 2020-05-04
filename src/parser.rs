@@ -8,6 +8,7 @@
 use std::fmt::Error as FmtError;
 #[cfg(not(feature = "chess"))]
 use std::str::FromStr;
+use std::time::Duration;
 
 use pest::error::Error;
 use pest::iterators::Pair;
@@ -228,7 +229,7 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                         }
                                         Rule::go_movetime => {
                                             time_control = Some(UciTimeControl::MoveTime(
-                                                parse_milliseconds(spi),
+                                                Duration::from_millis(parse_milliseconds(spi)),
                                             ));
                                         }
                                         Rule::go_timeleft => {
@@ -290,10 +291,10 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
 
                     if tl {
                         time_control = Some(UciTimeControl::TimeLeft {
-                            white_time: wtime,
-                            black_time: btime,
-                            white_increment: winc,
-                            black_increment: binc,
+                            white_time: wtime.map(|millis| Duration::from_millis(millis)),
+                            black_time: btime.map(|millis| Duration::from_millis(millis)),
+                            white_increment: winc.map(|millis| Duration::from_millis(millis)),
+                            black_increment: binc.map(|millis| Duration::from_millis(millis)),
                             moves_to_go,
                         });
                     }
@@ -506,10 +507,10 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                                             break;
                                         }
                                         Rule::info_time => {
-                                            let info_time = UciInfoAttribute::Time(parse_u64(
+                                            let info_time = UciInfoAttribute::Time(Duration::from_millis(parse_u64(
                                                 spi,
                                                 Rule::digits12,
-                                            ));
+                                            )));
                                             info_attr.push(info_time);
                                             break;
                                         }
@@ -1276,7 +1277,7 @@ mod tests {
         let ml = parse_strict("go movetime  55055\n").unwrap();
         assert_eq!(ml.len(), 1);
 
-        assert_eq!(ml[0], UciMessage::go_movetime(55055));
+        assert_eq!(ml[0], UciMessage::go_movetime(Duration::from_millis(55055)));
     }
 
     #[test]
@@ -1286,10 +1287,10 @@ mod tests {
         assert_eq!(ml.len(), 1);
 
         let tl = UciTimeControl::TimeLeft {
-            white_time: Some(903000),
-            black_time: Some(770908),
-            white_increment: Some(15000),
-            black_increment: Some(10000),
+            white_time: Some(Duration::from_millis(903000)),
+            black_time: Some(Duration::from_millis(770908)),
+            white_increment: Some(Duration::from_millis(15000)),
+            black_increment: Some(Duration::from_millis(10000)),
             moves_to_go: Some(17),
         };
 
@@ -1375,7 +1376,7 @@ mod tests {
             parse_strict("go movetime 10000 searchmoves a1h8 depth 6 nodes 55000000\n").unwrap();
         assert_eq!(ml.len(), 1);
 
-        let tc = UciTimeControl::MoveTime(10000);
+        let tc = UciTimeControl::MoveTime(Duration::from_millis(10000));
 
         #[cfg(not(feature = "chess"))]
             let sc = UciSearchControl {
@@ -1765,7 +1766,7 @@ mod tests {
     fn test_parse_info_time() {
         let ml = parse_strict("info    time    9002\n").unwrap();
 
-        let m = UciMessage::Info(vec![UciInfoAttribute::Time(9002)]);
+        let m = UciMessage::Info(vec![UciInfoAttribute::Time(Duration::from_millis(9002))]);
 
         assert_eq!(m, ml[0]);
     }
@@ -2089,7 +2090,7 @@ mod tests {
             UciInfoAttribute::from_centipawns(13),
             UciInfoAttribute::Depth(1),
             UciInfoAttribute::Nodes(13),
-            UciInfoAttribute::Time(15),
+            UciInfoAttribute::Time(Duration::from_millis(15)),
             UciInfoAttribute::Pv(vec![
                 UciMove::from_to(UciSquare::from('f', 1), UciSquare::from('b', 5))
             ])
@@ -2100,7 +2101,7 @@ mod tests {
             UciInfoAttribute::from_centipawns(13),
             UciInfoAttribute::Depth(1),
             UciInfoAttribute::Nodes(13),
-            UciInfoAttribute::Time(15),
+            UciInfoAttribute::Time(Duration::from_millis(15)),
             UciInfoAttribute::Pv(vec![
                 ChessMove::new(Square::F1, Square::B5, None)
             ])
@@ -2139,7 +2140,7 @@ mod tests {
             UciInfoAttribute::from_centipawns(20),
             UciInfoAttribute::Depth(3),
             UciInfoAttribute::Nodes(423),
-            UciInfoAttribute::Time(15),
+            UciInfoAttribute::Time(Duration::from_millis(15)),
             UciInfoAttribute::Pv(vec![
                 UciMove::from_to(UciSquare::from('f', 1), UciSquare::from('c', 4)),
                 UciMove::from_to(UciSquare::from('g', 8), UciSquare::from('f', 6)),
@@ -2152,7 +2153,7 @@ mod tests {
             UciInfoAttribute::from_centipawns(20),
             UciInfoAttribute::Depth(3),
             UciInfoAttribute::Nodes(423),
-            UciInfoAttribute::Time(15),
+            UciInfoAttribute::Time(Duration::from_millis(15)),
             UciInfoAttribute::Pv(vec![
                 ChessMove::new(Square::F1, Square::C4, None),
                 ChessMove::new(Square::G8, Square::F6, None),

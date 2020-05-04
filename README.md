@@ -17,7 +17,7 @@ To use the crate, declare a dependency on it in your Cargo.toml file:
 
 ```toml
 [dependencies]
-vampirc-uci = "0.9"
+vampirc-uci = "0.10"
 ```
 
 Then reference the `vampirc_uci` crate in your crate root:
@@ -93,9 +93,8 @@ This library (optionally) integrates with the [chess crate](https://crates.io/cr
 `vampirc-uci` crate into your project with the `chess` feature:
 
 ```toml
-    [dependencies.vampirc_uci]
-    version = "0.9"
-    features = ["chess"]
+[dependencies]
+vampirc-uci = {version = "0.10", features = ["chess"]}
 ```
 
 This will cause the vampirc_uci's internal representation of moves, squares and pieces to be replaced with `chess` 
@@ -119,6 +118,11 @@ building your own chess engine or tooling with it.
 ## API
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
+
+### New in 0.10.0
+* Changed the internal representation of time parameters from `u64` into `std::time::Duration` (breaking 
+change, hence the version increase).
+* Marked the `UciMessage::direction(&self)` method as public.
 
 ### New in 0.9.0
 * (Optional) integration with [chess crate](https://crates.io/crates/chess) (see above).
