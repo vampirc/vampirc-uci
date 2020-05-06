@@ -2,13 +2,15 @@ WHITESPACE = _{ " " | "\t" }
 
 commands = _{ SOI ~ ws_nl* ~ message+ ~ !any}
 
-commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* }
+commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* ~message_no_nl? ~ WHITESPACE*}
 
-message = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit |
-            position | go | id | uciok | readyok | bestmove | copyprotection | registration | option | info) ~
-            WHITESPACE* ~ NEWLINE+}
+message = _{ message_no_nl ~ NEWLINE+}
 
-uci = ${ ^"uci" ~ !non_ws }
+message_no_nl = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register | ucinewgame | stop | ponderhit | quit |
+                            position | go | id | uciok | readyok | bestmove | copyprotection | registration | option | info) ~
+                            WHITESPACE*}
+
+uci = ${ ^"uci" ~ (!non_ws | EOI) }
 
 switch = { ^"on" | ^"off" }
 debug = ${ ^"debug" ~ WHITESPACE+ ~ switch }
@@ -22,7 +24,7 @@ option_token = _{ !^"value" ~ token }
 option_value = { any+ }
 
 register = ${ ^"register" ~ WHITESPACE+ ~ (register_later | register_nc) }
-register_later = ${ ^"later" ~ !non_ws }
+register_later = ${ ^"later" ~ (!non_ws | EOI) }
 register_nc = ${ ^"name" ~ WHITESPACE+ ~ register_name ~ WHITESPACE+ ~ ^"code" ~ WHITESPACE+ ~ register_code }
 register_name = ${ register_token ~ (WHITESPACE+ ~ register_token)* }
 register_token = _{ !^"code" ~ token }
@@ -30,9 +32,9 @@ register_code = { any+ }
 
 ucinewgame = { ^"ucinewgame" }
 
-stop = ${ ^"stop" ~ !non_ws }
+stop = ${ ^"stop" ~ (!non_ws | EOI) }
 
-quit = ${ ^"quit" ~ !non_ws }
+quit = ${ ^"quit" ~ (!non_ws | EOI) }
 
 ponderhit = { ^"ponderhit" }
 
@@ -66,8 +68,8 @@ move_num = { counter }
 // GO
 go = ${ ^"go" ~ (WHITESPACE+ | go_time | go_search)* }
 go_time = { go_ponder | go_infinite | go_movetime | go_timeleft }
-go_ponder = ${ ^"ponder" ~ !non_ws }
-go_infinite = ${ ^"infinite" ~ !non_ws }
+go_ponder = ${ ^"ponder" ~ (!non_ws | EOI) }
+go_infinite = ${ ^"infinite" ~ (!non_ws | EOI) }
 go_movetime = ${ ^"movetime" ~ WHITESPACE+ ~ milliseconds }
 go_timeleft = { (wtime | btime | winc | binc | movestogo)+ }
 wtime = ${ ^"wtime" ~ WHITESPACE+ ~ milliseconds}

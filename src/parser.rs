@@ -920,6 +920,8 @@ fn piece_from_str(s: &str) -> Result<Piece, FmtError> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::*;
+
     use crate::uci::Serializable;
 
     use super::*;
@@ -2199,5 +2201,18 @@ mod tests {
         let msgs = parse_strict("go\n").unwrap();
         assert_eq!(msgs.len(), 1);
         assert_eq!(msgs[0], UciMessage::go())
+    }
+
+    #[ignore]
+    #[test]
+    fn test_parse_stdin() {
+        println!("Enter uci command: ");
+        for line in stdin().lock().lines() {
+            println!("got line: {:?}", line);
+            let msgs: MessageList = parse(&line.unwrap());
+            for msg in msgs {
+                println!("parsed: {}", msg);
+            }
+        }
     }
 }
