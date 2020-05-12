@@ -1,6 +1,6 @@
 WHITESPACE = _{ " " | "\t" }
 
-commands = _{ SOI ~ ws_nl* ~ message+ ~ !any}
+commands = _{ SOI ~ ws_nl* ~ message* ~ message_no_nl? ~ !any}
 
 commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* ~message_no_nl? ~ WHITESPACE*}
 
