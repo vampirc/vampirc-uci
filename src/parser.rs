@@ -2215,4 +2215,26 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_no_line_at_end_multi_parse() {
+        let msgs = parse("uci\ndebug on\nucinewgame\nstop\nquit");
+        assert_eq!(msgs.len(), 5);
+        assert_eq!(msgs[0], UciMessage::Uci);
+        assert_eq!(msgs[1], UciMessage::Debug(true));
+        assert_eq!(msgs[2], UciMessage::UciNewGame);
+        assert_eq!(msgs[3], UciMessage::Stop);
+        assert_eq!(msgs[4], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_no_line_at_end_single_parse() {
+        let msgs = parse("uci\n");
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0], UciMessage::Uci);
+
+        let msgs2 = parse("go ponder\n");
+        assert_eq!(msgs2.len(), 1);
+        assert_eq!(msgs2[0], UciMessage::go_ponder());
+    }
 }
