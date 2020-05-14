@@ -2279,7 +2279,7 @@ mod tests {
     }
 
     #[test]
-    fn test_no_line_at_end_parse_with_unknown_() {
+    fn test_no_line_at_end_parse_with_unknown() {
         let msgs = parse_with_unknown("uci\ndebug on\nucinewgame\nstop\nquit");
         assert_eq!(msgs.len(), 5);
         assert_eq!(msgs[0], UciMessage::Uci);
@@ -2287,6 +2287,13 @@ mod tests {
         assert_eq!(msgs[2], UciMessage::UciNewGame);
         assert_eq!(msgs[3], UciMessage::Stop);
         assert_eq!(msgs[4], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_no_line_at_end_parse_with_unknown_single() {
+        let msgs = parse_with_unknown("uciok");
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0], UciMessage::UciOk);
     }
 
     #[test]

@@ -122,6 +122,10 @@ The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci
 ### New in 0.10.0
 * Changed the internal representation of time parameters from `u64` into `std::time::Duration` (breaking 
 change, hence the version increase).
+* Relaxed grammar rules now allow that the last command sent to `parse()` or friends now doesn't need to
+have a newline terminator. This allows for parsing of, among others, a single command read in a loop from
+`stdin::io::stdin().lock().lines()`, which strips the new line characters from the end -
+see [vampirc-uci-14"](https://github.com/vampirc/vampirc-uci/issues/14).
 * Marked the `UciMessage::direction(&self)` method as public.
 
 ### New in 0.9.0
