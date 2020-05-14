@@ -47,7 +47,10 @@ struct UciParser;
 ///
 /// ```
 pub fn parse_strict(s: &str) -> Result<MessageList, Error<Rule>> {
-    do_parse_uci(s, Rule::commands)
+    let mut ml = MessageList::new();
+    do_parse_uci(s, Rule::commands, Some(&mut ml))?;
+
+    Ok(ml)
 }
 
 /// Parses the specified `&str s` into a list of `UciMessage`s. Please note that this method will ignore any
@@ -69,7 +72,10 @@ pub fn parse_strict(s: &str) -> Result<MessageList, Error<Rule>> {
 ///
 /// ```
 pub fn parse(s: &str) -> MessageList {
-    do_parse_uci(s, Rule::commands_ignore_unknown).unwrap()
+    let mut ml = MessageList::new();
+    do_parse_uci(s, Rule::commands_ignore_unknown, Some(&mut ml)).unwrap();
+
+    ml
 }
 
 /// This is like `parse`, except that it returns a `UciMessage::UnknownMessage` variant if it does not recognize the
@@ -95,9 +101,7 @@ pub fn parse_with_unknown(s: &str) -> MessageList {
     parse_att.unwrap()
 }
 
-fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
-    let mut ml = MessageList::default();
-
+fn do_parse_uci(s: &str, top_rule: Rule, mut ml: Option<&mut MessageList>) -> Result<Option<UciMessage>, Error<Rule>> {
     let pairs = UciParser::parse(top_rule, s)?;
 
     pairs
@@ -727,9 +731,13 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                 _ => unreachable!(),
             }
         })
-        .for_each(|msg| ml.push(msg));
+        .for_each(|msg| {
+            if let Some(a_ml) = &mut ml {
+                (*a_ml).push(msg);
+            }
+        });
 
-    Ok(ml)
+    Ok(None)
 }
 
 fn parse_id_text(id_pair: Pair<Rule>, rule: Rule) -> UciMessage {
