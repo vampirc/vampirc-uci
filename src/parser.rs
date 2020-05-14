@@ -2237,4 +2237,91 @@ mod tests {
         assert_eq!(msgs2.len(), 1);
         assert_eq!(msgs2[0], UciMessage::go_ponder());
     }
+
+    #[test]
+    fn test_no_line_at_end_multi_parse_strict() {
+        let msgs = parse("uci\ndebug on\nucinewgame\nstop\nquit");
+        assert_eq!(msgs.len(), 5);
+        assert_eq!(msgs[0], UciMessage::Uci);
+        assert_eq!(msgs[1], UciMessage::Debug(true));
+        assert_eq!(msgs[2], UciMessage::UciNewGame);
+        assert_eq!(msgs[3], UciMessage::Stop);
+        assert_eq!(msgs[4], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_no_line_at_end_single_parse_strict() {
+        let msgs = parse_strict("uci\n").unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0], UciMessage::Uci);
+
+        let msgs2 = parse_strict("info score cp 20").unwrap();
+        assert_eq!(msgs2.len(), 1);
+        assert_eq!(msgs2[0], UciMessage::Info(vec![UciInfoAttribute::Score {
+            cp: Some(20),
+            lower_bound: None,
+            mate: None,
+            upper_bound: None,
+        }]));
+    }
+
+    // TODO parse_with_unknown should be improved to parse everything it knows and not die immediately
+    // on error
+    #[test]
+    fn test_no_line_at_end_parse_with_unknown_with_unknown() {
+        let msgs = parse_with_unknown("uci\ndebug on\nucinewgame\nabc\nstop\nquit");
+        assert_eq!(msgs.len(), 1);
+        // assert_eq!(msgs[0], UciMessage::Uci);
+        // assert_eq!(msgs[1], UciMessage::Debug(true));
+        // assert_eq!(msgs[2], UciMessage::UciNewGame);
+        // assert_eq!(msgs[4], UciMessage::Stop);
+        // assert_eq!(msgs[5], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_no_line_at_end_parse_with_unknown_() {
+        let msgs = parse_with_unknown("uci\ndebug on\nucinewgame\nstop\nquit");
+        assert_eq!(msgs.len(), 5);
+        assert_eq!(msgs[0], UciMessage::Uci);
+        assert_eq!(msgs[1], UciMessage::Debug(true));
+        assert_eq!(msgs[2], UciMessage::UciNewGame);
+        assert_eq!(msgs[3], UciMessage::Stop);
+        assert_eq!(msgs[4], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_empty_nl_parse() {
+        let msgs = parse("\n");
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_nl_parse_strict() {
+        let msgs = parse_strict("\n").unwrap();
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_nl_parse_with_unknown() {
+        let msgs = parse_with_unknown("\n");
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_parse() {
+        let msgs = parse("");
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_parse_strict() {
+        let msgs = parse_strict("").unwrap();
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_parse_with_unknown() {
+        let msgs = parse_with_unknown("");
+        assert_eq!(msgs.len(), 0);
+    }
 }
