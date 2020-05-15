@@ -27,7 +27,7 @@ extern crate vampirc_uci;
 
 ## Usage
 
-1. Choose and import one of the `parse..` functions. See [Choosing the parsing function](#choosing-the-parsing-function)
+1. Choose and import one of the `parse..` functions. See [Choosing the parsing function](#choosing-the-parsing-function).
 
 ```rust
 use vampirc_uci::parse;
@@ -139,10 +139,10 @@ The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci
 * Added the `parse_one(&str)` method that parses and returns a single command, to be used in a loop
 that reads from `stdin` or other `BufReader`. See example above.
 * Changed the internal representation of time parameters from `u64` into `std::time::Duration` (breaking 
-change, hence the version increase).
-* Relaxed grammar rules now allow that the last command sent to `parse()` or friends now doesn't need to
+change).
+* Relaxed grammar rules now allow that the last command sent to `parse()` or friends doesn't need to
 have a newline terminator. This allows for parsing of, among others, a single command read in a loop from
-`stdin::io::stdin().lock().lines()`, which strips the new line characters from the end -
+`stdin::io::stdin().lock().lines()`, which strips the newline characters from the end -
 see [vampirc-uci-14](https://github.com/vampirc/vampirc-uci/issues/14).
 * Marked the `UciMessage::direction(&self)` method as public.
 
