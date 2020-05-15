@@ -79,7 +79,7 @@ pub fn parse(s: &str) -> MessageList {
 }
 
 /// This is like `parse`, except that it returns a `UciMessage::UnknownMessage` variant if it does not recognize the
-/// message. Best use with a single message, since only one `UnknownMessage` can be returned.
+/// message.
 ///
 /// /// # Examples
 ///
@@ -101,8 +101,40 @@ pub fn parse_with_unknown(s: &str) -> MessageList {
     parse_att.unwrap()
 }
 
+/// Parses and returns a single message, with or without a terminating newline. Usually used
+/// in a loop that reads a single line from an input stream, such as the stdin. Note that if the
+/// message is unrecognizable to the parser, a `UciMessage::UnknownMessage` variant is returned.
+///
+/// /// # Examples
+///
+/// ```
+/// use std::io::{self, BufRead};
+/// use vampirc_uci::{UciMessage, parse_one};
+///
+/// for line in io::stdin().lock().lines() {
+///         let msg: UciMessage = parse_one(&line.unwrap());
+///         println!("Received message: {}", msg);
+///     }
+/// ```
+pub fn parse_one(s: &str) -> UciMessage {
+    let r = do_parse_uci(s, Rule::single_message_per_line, None);
+
+    if let Err(e) = r {
+        let m = UciMessage::Unknown(s.trim_end().to_owned(), Some(e));
+        return m;
+    }
+
+    if let Some(m) = r.unwrap() {
+        return m;
+    }
+
+    return UciMessage::Unknown(String::new(), None);
+}
+
 fn do_parse_uci(s: &str, top_rule: Rule, mut ml: Option<&mut MessageList>) -> Result<Option<UciMessage>, Error<Rule>> {
     let pairs = UciParser::parse(top_rule, s)?;
+
+    let mut single: Option<UciMessage> = None;
 
     pairs
         .map(|pair: Pair<_>| {
@@ -734,10 +766,12 @@ fn do_parse_uci(s: &str, top_rule: Rule, mut ml: Option<&mut MessageList>) -> Re
         .for_each(|msg| {
             if let Some(a_ml) = &mut ml {
                 (*a_ml).push(msg);
+            } else {
+                single = Some(msg);
             }
         });
 
-    Ok(None)
+    Ok(single)
 }
 
 fn parse_id_text(id_pair: Pair<Rule>, rule: Rule) -> UciMessage {
@@ -2338,5 +2372,45 @@ mod tests {
     fn test_empty_parse_with_unknown() {
         let msgs = parse_with_unknown("");
         assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_one_uci() {
+        let msg = parse_one("uci");
+        assert_eq!(msg, UciMessage::Uci);
+    }
+
+    #[test]
+    fn test_parse_one_go() {
+        let msg = parse_one("go    infinite   \n");
+        assert_eq!(msg, UciMessage::go_infinite());
+    }
+
+    #[test]
+    fn test_parse_one_empty() {
+        let msg = parse_one("");
+        match msg {
+            UciMessage::Unknown(s, _) => {
+                assert_eq!(s, String::new());
+            },
+            _ => panic!("Expected UciMessage::Unknown")
+        }
+    }
+
+    #[test]
+    fn test_parse_one_unknown() {
+        let msg = parse_one("ax34\n");
+        match msg {
+            UciMessage::Unknown(s, _) => {
+                assert_eq!(s, String::from("ax34"));
+            },
+            _ => panic!("Expected UciMessage::Unknown")
+        }
+    }
+
+    #[test]
+    fn test_parse_one_multi_commands() {
+        let msg = parse_one("uci\nuciok\n");
+        assert_eq!(msg, UciMessage::Uci);
     }
 }

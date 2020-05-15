@@ -10,7 +10,7 @@ message_no_nl = _{ WHITESPACE* ~ (uci | debug | isready | setoption | register |
                             position | go | id | uciok | readyok | bestmove | copyprotection | registration | option | info) ~
                             WHITESPACE*}
 
-single_message_per_line = _{message_no_nl? ~ NEWLINE? }
+single_message_per_line = _{message_no_nl ~ NEWLINE? }
 
 uci = ${ ^"uci" ~ (!non_ws | EOI) }
 

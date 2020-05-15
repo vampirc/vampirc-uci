@@ -23,6 +23,7 @@ pub use chess::Square;
 pub use pest::error::Error;
 
 pub use self::parser::parse;
+pub use self::parser::parse_one;
 pub use self::parser::parse_strict;
 pub use self::parser::parse_with_unknown;
 pub use self::parser::Rule;
