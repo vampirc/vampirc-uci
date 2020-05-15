@@ -87,6 +87,21 @@ for m in messages {
     println!(message); // Outputs "option name Selectivity type spin default 2 min 0 max 4"
 ```
 
+6. Or, parse and handle line by line, from, for example, `stdin`:
+```rust
+use std::io::{self, BufRead};
+use vampirc_uci::{UciMessage, parse_one};
+
+for line in io::stdin().lock().lines() {
+     let msg: UciMessage = parse_one(&line.unwrap());
+     println!("Received message: {}", msg);
+}
+```
+
+## Choosing the parse method
+
+TODO
+
 ## Integration with the chess crate (since 0.9.0)
 
 This library (optionally) integrates with the [chess crate](https://crates.io/crates/chess). First, include the 
@@ -120,6 +135,8 @@ building your own chess engine or tooling with it.
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
 ### New in 0.10.0
+* Added the `parse_one(&str)` method that parses and returns a single command, to be used in a loop
+that reads from `stdin` or other `BufReader`. See example above.
 * Changed the internal representation of time parameters from `u64` into `std::time::Duration` (breaking 
 change, hence the version increase).
 * Relaxed grammar rules now allow that the last command sent to `parse()` or friends now doesn't need to

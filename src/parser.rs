@@ -64,8 +64,7 @@ pub fn parse_strict(s: &str) -> Result<MessageList, Error<Rule>> {
 /// # Examples
 ///
 /// ```
-/// use vampirc_uci::UciMessage;
-/// use vampirc_uci::parse;
+/// use vampirc_uci::{UciMessage, parse};
 ///
 /// let messages = parse("position startpos\n  unknown message that will be ignored  \ngo infinite\n");
 /// assert_eq!(messages.len(), 2);
@@ -84,10 +83,9 @@ pub fn parse(s: &str) -> MessageList {
 /// /// # Examples
 ///
 /// ```
-/// use vampirc_uci::UciMessage;
-/// use vampirc_uci::parse_with_unknown;
+/// use vampirc_uci::{UciMessage, parse_with_unknown};
 ///
-/// let messages = parse_with_unknown("not really a message\n");
+/// let messages = parse_with_unknown("not really a message");
 /// assert_eq!(messages.len(), 1);
 /// ```
 pub fn parse_with_unknown(s: &str) -> MessageList {
@@ -104,6 +102,9 @@ pub fn parse_with_unknown(s: &str) -> MessageList {
 /// Parses and returns a single message, with or without a terminating newline. Usually used
 /// in a loop that reads a single line from an input stream, such as the stdin. Note that if the
 /// message is unrecognizable to the parser, a `UciMessage::UnknownMessage` variant is returned.
+///
+/// Only the first command in the `s` parameter will be returned, if there are more than one in
+/// that string.
 ///
 /// /// # Examples
 ///
