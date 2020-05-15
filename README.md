@@ -27,10 +27,7 @@ extern crate vampirc_uci;
 
 ## Usage
 
-1. Import either the `parse(..)` method or the `parse_strict(..)` method. The difference between them is that `parse_strict(..)`
-will return a `pest::error::Error` if any of the input is unrecognized or violates the rules of the PEG grammar, whereas `parse`
-will simply ignore any such input. The latter is the approach recommended by the protocol specification. The third option is 
-`parse_with_unknown(..)`, which will pack unrecognized input into an `UciMessage::Unknown` variant.
+1. Choose and import one of the `parse` methods. See [Choosing the parsing method](#choosing-the-parsing-method)
 
 ```rust
 use vampirc_uci::parse;
@@ -98,7 +95,8 @@ for line in io::stdin().lock().lines() {
 }
 ```
 
-## Choosing the parse method
+(#choosing-the-parsing-method)
+## Choosing the parsing method
 
 TODO
 
@@ -142,7 +140,7 @@ change, hence the version increase).
 * Relaxed grammar rules now allow that the last command sent to `parse()` or friends now doesn't need to
 have a newline terminator. This allows for parsing of, among others, a single command read in a loop from
 `stdin::io::stdin().lock().lines()`, which strips the new line characters from the end -
-see [vampirc-uci-14"](https://github.com/vampirc/vampirc-uci/issues/14).
+see [vampirc-uci-14](https://github.com/vampirc/vampirc-uci/issues/14).
 * Marked the `UciMessage::direction(&self)` method as public.
 
 ### New in 0.9.0
