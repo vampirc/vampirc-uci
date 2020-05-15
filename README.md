@@ -27,7 +27,7 @@ extern crate vampirc_uci;
 
 ## Usage
 
-1. Choose and import one of the `parse` methods. See [Choosing the parsing method](#choosing-the-parsing-method)
+1. Choose and import one of the `parse..` functions. See [Choosing the parsing function](#choosing-the-parsing-function)
 
 ```rust
 use vampirc_uci::parse;
@@ -84,7 +84,7 @@ for m in messages {
     println!(message); // Outputs "option name Selectivity type spin default 2 min 0 max 4"
 ```
 
-6. Or, parse and handle line by line, from, for example, `stdin`:
+6. Or, parse and handle input line by line, from, for example, `stdin`:
 ```rust
 use std::io::{self, BufRead};
 use vampirc_uci::{UciMessage, parse_one};
@@ -95,8 +95,11 @@ for line in io::stdin().lock().lines() {
 }
 ```
 
-(#choosing-the-parsing-method)
-## Choosing the parsing method
+## Choosing the parsing function
+
+There are several parsing functions available, depending on your need and use case. They differ in what
+they return and how they handle unrecognized input. The following table may be of assistance in selecting the
+parsing function:
 
 TODO
 
