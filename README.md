@@ -27,10 +27,7 @@ extern crate vampirc_uci;
 
 ## Usage
 
-1. Import either the `parse(..)` method or the `parse_strict(..)` method. The difference between them is that `parse_strict(..)`
-will return a `pest::error::Error` if any of the input is unrecognized or violates the rules of the PEG grammar, whereas `parse`
-will simply ignore any such input. The latter is the approach recommended by the protocol specification. The third option is 
-`parse_with_unknown(..)`, which will pack unrecognized input into an `UciMessage::Unknown` variant.
+1. Choose and import one of the `parse..` functions. See [Choosing the parsing function](#choosing-the-parsing-function).
 
 ```rust
 use vampirc_uci::parse;
@@ -87,6 +84,34 @@ for m in messages {
     println!(message); // Outputs "option name Selectivity type spin default 2 min 0 max 4"
 ```
 
+6. Or, parse and handle input line by line, from, for example, `stdin`:
+```rust
+use std::io::{self, BufRead};
+use vampirc_uci::{UciMessage, parse_one};
+
+for line in io::stdin().lock().lines() {
+     let msg: UciMessage = parse_one(&line.unwrap());
+     println!("Received message: {}", msg);
+}
+```
+
+## Choosing the parsing function
+
+There are several parsing functions available, depending on your need and use case. They differ in what
+they return and how they handle unrecognized input. The following table may be of assistance in selecting the
+parsing function:
+
+| Function             | Returns                                 | Can skip terminating newline | On unrecognised input...                    | 
+| -------------------- | ----------------------------------------|------------------------------|---------------------------------------------|
+| `parse`              | `MessageList` (a `Vec` of `UciMessage`) | On last command              | Ignores it                                  |
+| `parse_strict`       | `MessageList` (a `Vec` of `UciMessage`) | On last command              | Throws a `pest::ParseError`                 |
+| `parse_with_unknown` | `MessageList` (a `Vec` of `UciMessage`) | On last command              | Wraps it in a `UciMessage::Unknown` variant |
+| `parse_one`          | `UciMessage`                            | Yes                          | Wraps it in a `UciMessage::Unknown` variant |
+
+From my own experience, I recommend using either `parse_with_unknown` if your string can contain multiple commands, or
+else `parse_one` if you're doing line by line parsing. That way, your chess engine or tooling can at least log 
+unrecognised input, available from `UciMessage::Unknown(String, Error)` variant.  
+
 ## Integration with the chess crate (since 0.9.0)
 
 This library (optionally) integrates with the [chess crate](https://crates.io/crates/chess). First, include the 
@@ -120,8 +145,14 @@ building your own chess engine or tooling with it.
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
 ### New in 0.10.0
+* Added the `parse_one(&str)` method that parses and returns a single command, to be used in a loop
+that reads from `stdin` or other `BufReader`. See example above.
 * Changed the internal representation of time parameters from `u64` into `std::time::Duration` (breaking 
-change, hence the version increase).
+change).
+* Relaxed grammar rules now allow that the last command sent to `parse()` or friends doesn't need to
+have a newline terminator. This allows for parsing of, among others, a single command read in a loop from
+`stdin::io::stdin().lock().lines()`, which strips the newline characters from the end -
+see [vampirc-uci-14](https://github.com/vampirc/vampirc-uci/issues/14).
 * Marked the `UciMessage::direction(&self)` method as public.
 
 ### New in 0.9.0

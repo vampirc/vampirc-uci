@@ -47,7 +47,10 @@ struct UciParser;
 ///
 /// ```
 pub fn parse_strict(s: &str) -> Result<MessageList, Error<Rule>> {
-    do_parse_uci(s, Rule::commands)
+    let mut ml = MessageList::new();
+    do_parse_uci(s, Rule::commands, Some(&mut ml))?;
+
+    Ok(ml)
 }
 
 /// Parses the specified `&str s` into a list of `UciMessage`s. Please note that this method will ignore any
@@ -61,27 +64,28 @@ pub fn parse_strict(s: &str) -> Result<MessageList, Error<Rule>> {
 /// # Examples
 ///
 /// ```
-/// use vampirc_uci::UciMessage;
-/// use vampirc_uci::parse;
+/// use vampirc_uci::{UciMessage, parse};
 ///
 /// let messages = parse("position startpos\n  unknown message that will be ignored  \ngo infinite\n");
 /// assert_eq!(messages.len(), 2);
 ///
 /// ```
 pub fn parse(s: &str) -> MessageList {
-    do_parse_uci(s, Rule::commands_ignore_unknown).unwrap()
+    let mut ml = MessageList::new();
+    do_parse_uci(s, Rule::commands_ignore_unknown, Some(&mut ml)).unwrap();
+
+    ml
 }
 
 /// This is like `parse`, except that it returns a `UciMessage::UnknownMessage` variant if it does not recognize the
-/// message. Best use with a single message, since only one `UnknownMessage` can be returned.
+/// message.
 ///
 /// /// # Examples
 ///
 /// ```
-/// use vampirc_uci::UciMessage;
-/// use vampirc_uci::parse_with_unknown;
+/// use vampirc_uci::{UciMessage, parse_with_unknown};
 ///
-/// let messages = parse_with_unknown("not really a message\n");
+/// let messages = parse_with_unknown("not really a message");
 /// assert_eq!(messages.len(), 1);
 /// ```
 pub fn parse_with_unknown(s: &str) -> MessageList {
@@ -95,10 +99,43 @@ pub fn parse_with_unknown(s: &str) -> MessageList {
     parse_att.unwrap()
 }
 
-fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
-    let mut ml = MessageList::default();
+/// Parses and returns a single message, with or without a terminating newline. Usually used
+/// in a loop that reads a single line from an input stream, such as the stdin. Note that if the
+/// message is unrecognizable to the parser, a `UciMessage::UnknownMessage` variant is returned.
+///
+/// Only the first command in the `s` parameter will be returned, if there are more than one in
+/// that string.
+///
+/// /// # Examples
+///
+/// ```
+/// use std::io::{self, BufRead};
+/// use vampirc_uci::{UciMessage, parse_one};
+///
+/// for line in io::stdin().lock().lines() {
+///         let msg: UciMessage = parse_one(&line.unwrap());
+///         println!("Received message: {}", msg);
+///     }
+/// ```
+pub fn parse_one(s: &str) -> UciMessage {
+    let r = do_parse_uci(s, Rule::single_message_per_line, None);
 
+    if let Err(e) = r {
+        let m = UciMessage::Unknown(s.trim_end().to_owned(), Some(e));
+        return m;
+    }
+
+    if let Some(m) = r.unwrap() {
+        return m;
+    }
+
+    return UciMessage::Unknown(String::new(), None);
+}
+
+fn do_parse_uci(s: &str, top_rule: Rule, mut ml: Option<&mut MessageList>) -> Result<Option<UciMessage>, Error<Rule>> {
     let pairs = UciParser::parse(top_rule, s)?;
+
+    let mut single: Option<UciMessage> = None;
 
     pairs
         .map(|pair: Pair<_>| {
@@ -727,9 +764,15 @@ fn do_parse_uci(s: &str, top_rule: Rule) -> Result<MessageList, Error<Rule>> {
                 _ => unreachable!(),
             }
         })
-        .for_each(|msg| ml.push(msg));
+        .for_each(|msg| {
+            if let Some(a_ml) = &mut ml {
+                (*a_ml).push(msg);
+            } else {
+                single = Some(msg);
+            }
+        });
 
-    Ok(ml)
+    Ok(single)
 }
 
 fn parse_id_text(id_pair: Pair<Rule>, rule: Rule) -> UciMessage {
@@ -920,6 +963,8 @@ fn piece_from_str(s: &str) -> Result<Piece, FmtError> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::*;
+
     use crate::uci::Serializable;
 
     use super::*;
@@ -2199,5 +2244,174 @@ mod tests {
         let msgs = parse_strict("go\n").unwrap();
         assert_eq!(msgs.len(), 1);
         assert_eq!(msgs[0], UciMessage::go())
+    }
+
+    #[ignore]
+    #[test]
+    fn test_parse_stdin() {
+        println!("Enter uci command: ");
+        for line in stdin().lock().lines() {
+            println!("got line: {:?}", line);
+            let msgs: MessageList = parse(&line.unwrap());
+            for msg in msgs {
+                println!("parsed: {}", msg);
+            }
+        }
+    }
+
+    #[test]
+    fn test_no_line_at_end_multi_parse() {
+        let msgs = parse("uci\ndebug on\nucinewgame\nstop\nquit");
+        assert_eq!(msgs.len(), 5);
+        assert_eq!(msgs[0], UciMessage::Uci);
+        assert_eq!(msgs[1], UciMessage::Debug(true));
+        assert_eq!(msgs[2], UciMessage::UciNewGame);
+        assert_eq!(msgs[3], UciMessage::Stop);
+        assert_eq!(msgs[4], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_no_line_at_end_single_parse() {
+        let msgs = parse("uci\n");
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0], UciMessage::Uci);
+
+        let msgs2 = parse("go ponder\n");
+        assert_eq!(msgs2.len(), 1);
+        assert_eq!(msgs2[0], UciMessage::go_ponder());
+    }
+
+    #[test]
+    fn test_no_line_at_end_multi_parse_strict() {
+        let msgs = parse("uci\ndebug on\nucinewgame\nstop\nquit");
+        assert_eq!(msgs.len(), 5);
+        assert_eq!(msgs[0], UciMessage::Uci);
+        assert_eq!(msgs[1], UciMessage::Debug(true));
+        assert_eq!(msgs[2], UciMessage::UciNewGame);
+        assert_eq!(msgs[3], UciMessage::Stop);
+        assert_eq!(msgs[4], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_no_line_at_end_single_parse_strict() {
+        let msgs = parse_strict("uci\n").unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0], UciMessage::Uci);
+
+        let msgs2 = parse_strict("info score cp 20").unwrap();
+        assert_eq!(msgs2.len(), 1);
+        assert_eq!(msgs2[0], UciMessage::Info(vec![UciInfoAttribute::Score {
+            cp: Some(20),
+            lower_bound: None,
+            mate: None,
+            upper_bound: None,
+        }]));
+    }
+
+    // TODO parse_with_unknown should be improved to parse everything it knows and not die immediately
+    // on error
+    #[test]
+    fn test_no_line_at_end_parse_with_unknown_with_unknown() {
+        let msgs = parse_with_unknown("uci\ndebug on\nucinewgame\nabc\nstop\nquit");
+        assert_eq!(msgs.len(), 1);
+        // assert_eq!(msgs[0], UciMessage::Uci);
+        // assert_eq!(msgs[1], UciMessage::Debug(true));
+        // assert_eq!(msgs[2], UciMessage::UciNewGame);
+        // assert_eq!(msgs[4], UciMessage::Stop);
+        // assert_eq!(msgs[5], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_no_line_at_end_parse_with_unknown() {
+        let msgs = parse_with_unknown("uci\ndebug on\nucinewgame\nstop\nquit");
+        assert_eq!(msgs.len(), 5);
+        assert_eq!(msgs[0], UciMessage::Uci);
+        assert_eq!(msgs[1], UciMessage::Debug(true));
+        assert_eq!(msgs[2], UciMessage::UciNewGame);
+        assert_eq!(msgs[3], UciMessage::Stop);
+        assert_eq!(msgs[4], UciMessage::Quit);
+    }
+
+    #[test]
+    fn test_no_line_at_end_parse_with_unknown_single() {
+        let msgs = parse_with_unknown("uciok");
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0], UciMessage::UciOk);
+    }
+
+    #[test]
+    fn test_empty_nl_parse() {
+        let msgs = parse("\n");
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_nl_parse_strict() {
+        let msgs = parse_strict("\n").unwrap();
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_nl_parse_with_unknown() {
+        let msgs = parse_with_unknown("\n");
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_parse() {
+        let msgs = parse("");
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_parse_strict() {
+        let msgs = parse_strict("").unwrap();
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_empty_parse_with_unknown() {
+        let msgs = parse_with_unknown("");
+        assert_eq!(msgs.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_one_uci() {
+        let msg = parse_one("uci");
+        assert_eq!(msg, UciMessage::Uci);
+    }
+
+    #[test]
+    fn test_parse_one_go() {
+        let msg = parse_one("go    infinite   \n");
+        assert_eq!(msg, UciMessage::go_infinite());
+    }
+
+    #[test]
+    fn test_parse_one_empty() {
+        let msg = parse_one("");
+        match msg {
+            UciMessage::Unknown(s, _) => {
+                assert_eq!(s, String::new());
+            },
+            _ => panic!("Expected UciMessage::Unknown")
+        }
+    }
+
+    #[test]
+    fn test_parse_one_unknown() {
+        let msg = parse_one("ax34\n");
+        match msg {
+            UciMessage::Unknown(s, _) => {
+                assert_eq!(s, String::from("ax34"));
+            },
+            _ => panic!("Expected UciMessage::Unknown")
+        }
+    }
+
+    #[test]
+    fn test_parse_one_multi_commands() {
+        let msg = parse_one("uci\nuciok\n");
+        assert_eq!(msg, UciMessage::Uci);
     }
 }
