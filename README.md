@@ -144,6 +144,9 @@ building your own chess engine or tooling with it.
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
+### New in 0.10.1
+* Republish as 0.10.1 due to improper publish. 
+
 ### New in 0.10.0
 * Added the `parse_one(&str)` method that parses and returns a single command, to be used in a loop
 that reads from `stdin` or other `BufReader`. See example above.
