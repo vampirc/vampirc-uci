@@ -101,12 +101,12 @@ There are several parsing functions available, depending on your need and use ca
 they return and how they handle unrecognized input. The following table may be of assistance in selecting the
 parsing function:
 
-| Function             | Returns                                  | Can skip terminating newline | On unrecognised input...                    | 
-| -------------------- | -----------------------------------------|------------------------------|---------------------------------------------|
-| `parse`              | `MessageList` (a `Vec` of `UciMessage`s) | On last command              | Ignores it                                  |
-| `parse_strict`       | `MessageList` (a `Vec` of `UciMessage`s) | On last command              | Throws a `pest::ParseError`                 |
-| `parse_with_unknown` | `MessageList` (a `Vec` of `UciMessage`s) | On last command              | Wraps it in a `UciMessage::Unknown` variant |
-| `parse_one`          | `UciMessage`                             | Yes                          | Wraps it in a `UciMessage::Unknown` variant |
+| Function             | Returns                                 | Can skip terminating newline | On unrecognised input...                    | 
+| -------------------- | ----------------------------------------|------------------------------|---------------------------------------------|
+| `parse`              | `MessageList` (a `Vec` of `UciMessage`) | On last command              | Ignores it                                  |
+| `parse_strict`       | `MessageList` (a `Vec` of `UciMessage`) | On last command              | Throws a `pest::ParseError`                 |
+| `parse_with_unknown` | `MessageList` (a `Vec` of `UciMessage`) | On last command              | Wraps it in a `UciMessage::Unknown` variant |
+| `parse_one`          | `UciMessage`                            | Yes                          | Wraps it in a `UciMessage::Unknown` variant |
 
 From my own experience, I recommend using either `parse_with_unknown` if your string can contain multiple commands, or
 else `parse_one` if you're doing line by line parsing. That way, your chess engine or tooling can at least log 
