@@ -1,9 +1,9 @@
-# vampirc-uci [![Build Status](https://travis-ci.org/vampirc/vampirc-uci.svg?branch=master)](https://travis-ci.org/vampirc/vampirc-uci) [![Documentation Status](https://docs.rs/vampirc-uci/badge.svg)](https://docs.rs/vampirc-uci)
+# vampirc-uci [![Documentation Status](https://docs.rs/vampirc-uci/badge.svg)](https://docs.rs/vampirc-uci)
 
 Vampirc UCI is a [Universal Chess Interface (UCI) protocol](https://en.wikipedia.org/wiki/Universal_Chess_Interface) parser and
 serializer. 
 
-The UCI protocol is a way for a chess engine to communicate with a chessboard GUI, such as [Scid vs. PC](http://scidvspc.sourceforge.net/).
+The UCI protocol is a way for a chess engine to communicate with a chessboard GUI, such as [Cute Chess](https://cutechess.com/).
 
 The [Vampirc Project](https://vampirc.kejzar.si) is a chess engine and chess library suite, written in Rust. It is named for the
 Slovenian grandmaster [Vasja Pirc](https://en.wikipedia.org/wiki/Vasja_Pirc), and, I guess, vampires? I dunno.
@@ -17,7 +17,7 @@ To use the crate, declare a dependency on it in your Cargo.toml file:
 
 ```toml
 [dependencies]
-vampirc-uci = "0.10"
+vampirc-uci = "0.11"
 ```
 
 Then reference the `vampirc_uci` crate in your crate root:
@@ -119,7 +119,7 @@ This library (optionally) integrates with the [chess crate](https://crates.io/cr
 
 ```toml
 [dependencies]
-vampirc-uci = {version = "0.10", features = ["chess"]}
+vampirc-uci = {version = "0.11", features = ["chess"]}
 ```
 
 This will cause the vampirc_uci's internal representation of moves, squares and pieces to be replaced with `chess` 
@@ -143,6 +143,13 @@ building your own chess engine or tooling with it.
 ## API
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
+
+### New in 0.11.0
+* Support for negative times, such as negative time left and time increment, as discussed in 
+[vampirc-uci doesn't recognize negative times #16](https://github.com/vampirc/vampirc-uci/issues/16).
+To support negative durations, the representation of millisecond-based time quantities has been switched
+from Rust standard library's `std::time::Duration` to the [chrono crate's](https://crates.io/crates/chrono)
+`chrono::Duration` ([doc](https://docs.rs/chrono/0.4.15/chrono/struct.Duration.html)). This is an API-breaking change, hence the version increase.
 
 ### New in 0.10.1
 * Republish as 0.10.1 due to improper publish. 
