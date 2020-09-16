@@ -1,4 +1,6 @@
 WHITESPACE = _{ " " | "\t" }
+PLUS = _{"+"}
+MINUS = _{"-"}
 
 commands = _{ SOI ~ ws_nl* ~ message* ~ message_no_nl? ~ !any}
 
@@ -160,8 +162,8 @@ info_upperbound = { ^"upperbound" }
 
 
 
-
-milliseconds = { digit{1,12} }
+sign = _{PLUS | MINUS}
+milliseconds = {sign? ~ digit{1,12} }
 digits3 = { digit{1,3} }
 digits12 = { digit{1,12} }
 i64 = { "-"? ~ digits12 }

@@ -1696,4 +1696,37 @@ mod tests {
         let empty_go = UciMessage::go();
         assert_eq!(empty_go, UciMessage::Go { time_control: None, search_control: None });
     }
+
+    #[test]
+    fn test_negative_duration() {
+        let time_control = UciTimeControl::TimeLeft {
+            white_time: Some(Duration::milliseconds(-4061)),
+            black_time: Some(Duration::milliseconds(56826)),
+            white_increment: None,
+            black_increment: None,
+            moves_to_go: Some(90),
+        };
+
+        let message = UciMessage::Go {
+            time_control: Some(time_control),
+            search_control: None,
+        };
+
+        match message {
+            UciMessage::Go { time_control, search_control: _ } => {
+                let tc = time_control.unwrap();
+                match tc {
+                    UciTimeControl::TimeLeft { white_time, black_time, white_increment: _, black_increment: _, moves_to_go: _ } => {
+                        let wt = white_time.unwrap();
+                        assert_eq!(wt, Duration::milliseconds(-4061));
+                        assert_eq!(wt.num_milliseconds(), -4061);
+                        assert_eq!(wt.num_seconds(), -4);
+                        assert_eq!(black_time.unwrap(), Duration::milliseconds(56826));
+                    }
+                    _ => unreachable!()
+                }
+            },
+            _ => unreachable!()
+        }
+    }
 }

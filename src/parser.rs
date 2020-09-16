@@ -2414,4 +2414,65 @@ mod tests {
         let msg = parse_one("uci\nuciok\n");
         assert_eq!(msg, UciMessage::Uci);
     }
+
+    #[test]
+    fn test_parse_negative_duration_wtime() {
+        let parsed_msg = parse_one("go wtime -4061 btime 56826 movestogo 90\n");
+
+        let time_control = UciTimeControl::TimeLeft {
+            white_time: Some(Duration::milliseconds(-4061)),
+            black_time: Some(Duration::milliseconds(56826)),
+            white_increment: None,
+            black_increment: None,
+            moves_to_go: Some(90),
+        };
+
+        let test_msg = UciMessage::Go {
+            time_control: Some(time_control),
+            search_control: None,
+        };
+
+        assert_eq!(test_msg, parsed_msg);
+    }
+
+    #[test]
+    fn test_parse_signed_positive_duration_wtime() {
+        let parsed_msg = parse_one("go wtime +15030 btime +56826 movestogo 90\n");
+
+        let time_control = UciTimeControl::TimeLeft {
+            white_time: Some(Duration::milliseconds(15030)),
+            black_time: Some(Duration::milliseconds(56826)),
+            white_increment: None,
+            black_increment: None,
+            moves_to_go: Some(90),
+        };
+
+        let test_msg = UciMessage::Go {
+            time_control: Some(time_control),
+            search_control: None,
+        };
+
+        assert_eq!(test_msg, parsed_msg);
+    }
+
+    // TODO problematic that this passes
+    #[test]
+    fn test_parse_signed_improperly_duration_wtime() {
+        let parsed_msg = parse_one("go wtime !15030 btime +56826 movestogo 90\n");
+
+        let time_control = UciTimeControl::TimeLeft {
+            white_time: Some(Duration::milliseconds(15030)),
+            black_time: Some(Duration::milliseconds(56826)),
+            white_increment: None,
+            black_increment: None,
+            moves_to_go: Some(90),
+        };
+
+        let test_msg = UciMessage::Go {
+            time_control: Some(time_control),
+            search_control: None,
+        };
+
+        assert_eq!(test_msg, parsed_msg);
+    }
 }
