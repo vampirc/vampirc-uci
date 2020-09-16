@@ -2455,7 +2455,8 @@ mod tests {
         assert_eq!(test_msg, parsed_msg);
     }
 
-    // TODO problematic that this passes
+    // TODO this fails for the wrong reason, parsing DOES not fail, it returns an essential empty GO message
+    #[ignore]
     #[test]
     fn test_parse_signed_improperly_duration_wtime() {
         let parsed_msg = parse_one("go wtime !15030 btime +56826 movestogo 90\n");
