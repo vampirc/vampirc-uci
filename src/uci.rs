@@ -7,10 +7,10 @@
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
 #[cfg(not(feature = "chess"))]
 use std::str::FromStr;
-use std::time::Duration;
 
 #[cfg(feature = "chess")]
 use chess::ChessMove;
+use chrono::Duration;
 use pest::error::Error as PestError;
 
 use crate::parser::Rule;
@@ -404,23 +404,23 @@ impl Serializable for UciMessage {
                         UciTimeControl::Infinite => { s += "infinite "; }
                         UciTimeControl::Ponder => { s += "ponder "; }
                         UciTimeControl::MoveTime(duration) => {
-                            s += format!("movetime {} ", duration.as_millis()).as_str();
+                            s += format!("movetime {} ", duration.num_milliseconds()).as_str();
                         }
                         UciTimeControl::TimeLeft { white_time, black_time, white_increment, black_increment, moves_to_go } => {
                             if let Some(wt) = white_time {
-                                s += format!("wtime {} ", wt.as_millis()).as_str();
+                                s += format!("wtime {} ", wt.num_milliseconds()).as_str();
                             }
 
                             if let Some(bt) = black_time {
-                                s += format!("bt {} ", bt.as_millis()).as_str();
+                                s += format!("bt {} ", bt.num_milliseconds()).as_str();
                             }
 
                             if let Some(wi) = white_increment {
-                                s += format!("winc {} ", wi.as_millis()).as_str();
+                                s += format!("winc {} ", wi.num_milliseconds()).as_str();
                             }
 
                             if let Some(bi) = black_increment {
-                                s += format!("binc {} ", bi.as_millis()).as_str();
+                                s += format!("binc {} ", bi.num_milliseconds()).as_str();
                             }
 
                             if let Some(mtg) = moves_to_go {
@@ -943,7 +943,7 @@ impl Serializable for UciInfoAttribute {
         match self {
             UciInfoAttribute::Depth(depth) => s += format!(" {}", *depth).as_str(),
             UciInfoAttribute::SelDepth(depth) => s += format!(" {}", *depth).as_str(),
-            UciInfoAttribute::Time(time) => s += format!(" {}", time.as_millis()).as_str(),
+            UciInfoAttribute::Time(time) => s += format!(" {}", time.num_milliseconds()).as_str(),
             UciInfoAttribute::Nodes(nodes) => s += format!(" {}", *nodes).as_str(),
             UciInfoAttribute::Pv(moves) | UciInfoAttribute::Refutation(moves) => {
                 if !moves.is_empty() {
@@ -1377,7 +1377,7 @@ mod tests {
         let attributes: Vec<UciInfoAttribute> = vec![
             UciInfoAttribute::Depth(2),
             UciInfoAttribute::from_centipawns(214),
-            UciInfoAttribute::Time(Duration::from_millis(1242)),
+            UciInfoAttribute::Time(Duration::milliseconds(1242)),
             UciInfoAttribute::Nodes(2124),
             UciInfoAttribute::Nps(34928),
             #[cfg(not(feature = "chess"))]
@@ -1410,7 +1410,7 @@ mod tests {
             UciInfoAttribute::Nodes(1540),
             UciInfoAttribute::Nps(54),
             UciInfoAttribute::TbHits(0),
-            UciInfoAttribute::Time(Duration::from_millis(28098)),
+            UciInfoAttribute::Time(Duration::milliseconds(28098)),
             #[cfg(not(feature = "chess"))]
                 UciInfoAttribute::Pv(vec![
                 UciMove::from_to(UciSquare::from('a', 8), UciSquare::from('b', 6)),
@@ -1695,5 +1695,38 @@ mod tests {
     fn test_empty_go_message() {
         let empty_go = UciMessage::go();
         assert_eq!(empty_go, UciMessage::Go { time_control: None, search_control: None });
+    }
+
+    #[test]
+    fn test_negative_duration() {
+        let time_control = UciTimeControl::TimeLeft {
+            white_time: Some(Duration::milliseconds(-4061)),
+            black_time: Some(Duration::milliseconds(56826)),
+            white_increment: None,
+            black_increment: None,
+            moves_to_go: Some(90),
+        };
+
+        let message = UciMessage::Go {
+            time_control: Some(time_control),
+            search_control: None,
+        };
+
+        match message {
+            UciMessage::Go { time_control, search_control: _ } => {
+                let tc = time_control.unwrap();
+                match tc {
+                    UciTimeControl::TimeLeft { white_time, black_time, white_increment: _, black_increment: _, moves_to_go: _ } => {
+                        let wt = white_time.unwrap();
+                        assert_eq!(wt, Duration::milliseconds(-4061));
+                        assert_eq!(wt.num_milliseconds(), -4061);
+                        assert_eq!(wt.num_seconds(), -4);
+                        assert_eq!(black_time.unwrap(), Duration::milliseconds(56826));
+                    }
+                    _ => unreachable!()
+                }
+            },
+            _ => unreachable!()
+        }
     }
 }
