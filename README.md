@@ -199,9 +199,9 @@ enum representing all 17 types of messages described by the UCI documentation, a
 
 ## vampirc-io
 
-This crate goes together well with the [vampirc-io](https://github.com/vampirc/vampirc-io) crate, a library for 
-non-blocking communication over standard input and output (which is how UCI communication is usually conducted), 
-based on the [async-std framework](https://github.com/async-rs/async-std).
+This section used to recommend using the [vampirc-io](https://github.com/vampirc/vampirc-io) crate to connect your
+UCI-based chess engine to the GUI, but honestly, with recent advances to Rust's async stack support, it is probably
+just easier if you do it yourself using, for example, the [async-std library](https://github.com/async-rs/async-std).
 
 ## Limitations and 1.0
 
