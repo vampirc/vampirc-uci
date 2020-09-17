@@ -150,6 +150,7 @@ The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci
 To support negative durations, the representation of millisecond-based time quantities has been switched
 from Rust standard library's `std::time::Duration` to the [chrono crate's](https://crates.io/crates/chrono)
 `chrono::Duration` ([doc](https://docs.rs/chrono/0.4.15/chrono/struct.Duration.html)). This is an API-breaking change, hence the version increase.
+* Fix for [vampric-uci-19](https://github.com/vampirc/vampirc-uci/issues/19), a sometimes incorrect parsing of the `go` message.
 
 ### New in 0.10.1
 * Republish as 0.10.1 due to improper publish. 
