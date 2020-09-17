@@ -255,74 +255,82 @@ fn do_parse_uci(s: &str, top_rule: Rule, mut ml: Option<&mut MessageList>) -> Re
 
                     for sp in pair.into_inner() {
                         match sp.as_rule() {
-                            Rule::go_time => {
-                                for spi in sp.into_inner() {
-                                    match spi.as_rule() {
-                                        Rule::go_ponder => {
-                                            time_control = Some(UciTimeControl::Ponder);
-                                        }
-                                        Rule::go_infinite => {
-                                            time_control = Some(UciTimeControl::Infinite);
-                                        }
-                                        Rule::go_movetime => {
-                                            time_control = Some(UciTimeControl::MoveTime(
-                                                Duration::milliseconds(parse_milliseconds(spi)),
-                                            ));
-                                        }
-                                        Rule::go_timeleft => {
-                                            if !tl {
-                                                tl = true;
-                                            }
+                            Rule::go_empty => {}
+                            Rule::go_full => {
+                                for sp_full in sp.into_inner() {
+                                    match sp_full.as_rule() {
+                                        Rule::go_time => {
+                                            for spi in sp_full.into_inner() {
+                                                match spi.as_rule() {
+                                                    Rule::go_ponder => {
+                                                        time_control = Some(UciTimeControl::Ponder);
+                                                    }
+                                                    Rule::go_infinite => {
+                                                        time_control = Some(UciTimeControl::Infinite);
+                                                    }
+                                                    Rule::go_movetime => {
+                                                        time_control = Some(UciTimeControl::MoveTime(
+                                                            Duration::milliseconds(parse_milliseconds(spi)),
+                                                        ));
+                                                    }
+                                                    Rule::go_timeleft => {
+                                                        if !tl {
+                                                            tl = true;
+                                                        }
 
-                                            for sspi in spi.into_inner() {
-                                                match sspi.as_rule() {
-                                                    Rule::wtime => {
-                                                        wtime = Some(parse_milliseconds(sspi));
+                                                        for sspi in spi.into_inner() {
+                                                            match sspi.as_rule() {
+                                                                Rule::wtime => {
+                                                                    wtime = Some(parse_milliseconds(sspi));
+                                                                }
+                                                                Rule::btime => {
+                                                                    btime = Some(parse_milliseconds(sspi));
+                                                                }
+                                                                Rule::winc => {
+                                                                    winc = Some(parse_milliseconds(sspi));
+                                                                }
+                                                                Rule::binc => {
+                                                                    binc = Some(parse_milliseconds(sspi));
+                                                                }
+                                                                Rule::movestogo => {
+                                                                    moves_to_go =
+                                                                        Some(parse_u8(sspi, Rule::digits3));
+                                                                }
+                                                                _ => {}
+                                                            };
+                                                        }
                                                     }
-                                                    Rule::btime => {
-                                                        btime = Some(parse_milliseconds(sspi));
+
+                                                    _ => {}
+                                                }
+                                            }
+                                        }
+                                        Rule::go_search => {
+                                            for spi in sp_full.into_inner() {
+                                                match spi.as_rule() {
+                                                    Rule::depth => {
+                                                        search.depth = Some(parse_u8(spi, Rule::digits3));
                                                     }
-                                                    Rule::winc => {
-                                                        winc = Some(parse_milliseconds(sspi));
+                                                    Rule::mate => {
+                                                        search.mate = Some(parse_u8(spi, Rule::digits3))
                                                     }
-                                                    Rule::binc => {
-                                                        binc = Some(parse_milliseconds(sspi));
+                                                    Rule::nodes => {
+                                                        search.nodes = Some(parse_u64(spi, Rule::digits12))
                                                     }
-                                                    Rule::movestogo => {
-                                                        moves_to_go =
-                                                            Some(parse_u8(sspi, Rule::digits3));
+                                                    Rule::searchmoves => {
+                                                        for mt in spi.into_inner() {
+                                                            search.search_moves.push(parse_a_move(mt));
+                                                        }
                                                     }
                                                     _ => {}
-                                                };
+                                                }
                                             }
                                         }
-
-                                        _ => {}
+                                        _ => unreachable!()
                                     }
                                 }
                             }
-                            Rule::go_search => {
-                                for spi in sp.into_inner() {
-                                    match spi.as_rule() {
-                                        Rule::depth => {
-                                            search.depth = Some(parse_u8(spi, Rule::digits3));
-                                        }
-                                        Rule::mate => {
-                                            search.mate = Some(parse_u8(spi, Rule::digits3))
-                                        }
-                                        Rule::nodes => {
-                                            search.nodes = Some(parse_u64(spi, Rule::digits12))
-                                        }
-                                        Rule::searchmoves => {
-                                            for mt in spi.into_inner() {
-                                                search.search_moves.push(parse_a_move(mt));
-                                            }
-                                        }
-                                        _ => {}
-                                    }
-                                }
-                            }
-                            _ => {}
+                            _ => unreachable!(),
                         }
                     }
 
