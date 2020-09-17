@@ -70,12 +70,14 @@ ply_clock = { counter }
 move_num = { counter }
 
 // GO
-go = ${ ^"go" ~ (WHITESPACE+ | go_time | go_search)* }
+go = {go_full | go_empty}
+go_empty = ${ ^"go" ~ WHITESPACE* ~  (EOI | NEWLINE) }
+go_full = ${ ^"go" ~ (WHITESPACE+  ~ (go_time | go_search | EOI | NEWLINE))+ }
 go_time = { go_ponder | go_infinite | go_movetime | go_timeleft }
 go_ponder = ${ ^"ponder" ~ (!non_ws | EOI) }
 go_infinite = ${ ^"infinite" ~ (!non_ws | EOI) }
 go_movetime = ${ ^"movetime" ~ WHITESPACE+ ~ milliseconds }
-go_timeleft = { (wtime | btime | winc | binc | movestogo)+ }
+go_timeleft = ${ (wtime | btime | winc | binc | movestogo)+ }
 wtime = ${ ^"wtime" ~ WHITESPACE+ ~ milliseconds}
 btime = ${ ^"btime" ~ WHITESPACE+ ~ milliseconds}
 winc = ${ ^"winc" ~ WHITESPACE+ ~ milliseconds}
