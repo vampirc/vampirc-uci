@@ -2335,7 +2335,11 @@ mod tests {
     #[test]
     fn test_no_line_at_end_parse_with_unknown_with_unknown() {
         let msgs = parse_with_unknown("uci\ndebug on\nucinewgame\nabc\nstop\nquit");
-        assert_eq!(msgs.len(), 1);
+        match &msgs[0] {
+            UciMessage::Unknown(s, _) => assert_eq!(s, "whatever"),
+            _ => panic!("Not a message")
+        }
+        assert_eq!(msgs.len(), 6);
         // assert_eq!(msgs[0], UciMessage::Uci);
         // assert_eq!(msgs[1], UciMessage::Debug(true));
         // assert_eq!(msgs[2], UciMessage::UciNewGame);
