@@ -6,7 +6,6 @@
 
 #[cfg(feature = "chess")]
 use std::fmt::Error as FmtError;
-#[cfg(not(feature = "chess"))]
 use std::str::FromStr;
 
 use chrono::Duration;
@@ -858,7 +857,7 @@ fn parse_square(sq_pair: Pair<Rule>) -> Square {
         _ => unreachable!(),
     }
 
-    Square::from_string(file.to_string() + rank.to_string().as_str()).unwrap()
+    Square::from_str(format!("{}{}", file.to_string(), rank.to_string()).as_str()).unwrap()
 }
 
 fn parse_milliseconds(pair: Pair<Rule>) -> i64 {

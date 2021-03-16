@@ -144,6 +144,9 @@ building your own chess engine or tooling with it.
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
+### New in 0.11.1 (In progress - unreleased)
+* Support for the [chess crate](https://crates.io/crates/chess) v. 3.2.0
+
 ### New in 0.11.0
 * Support for negative times, such as negative time left and time increment, as discussed in 
 [vampirc-uci doesn't recognize negative times #16](https://github.com/vampirc/vampirc-uci/issues/16).
