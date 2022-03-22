@@ -412,7 +412,7 @@ impl Serializable for UciMessage {
                             }
 
                             if let Some(bt) = black_time {
-                                s += format!("bt {} ", bt.num_milliseconds()).as_str();
+                                s += format!("btime {} ", bt.num_milliseconds()).as_str();
                             }
 
                             if let Some(wi) = white_increment {
