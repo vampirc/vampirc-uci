@@ -2,7 +2,7 @@ WHITESPACE = _{ " " | "\t" }
 PLUS = _{"+"}
 MINUS = _{"-"}
 
-commands = _{ SOI ~ ws_nl* ~ message* ~ message_no_nl? ~ !any}
+commands = _{ SOI ~ ws_nl* ~ (message|token+)* ~ message_no_nl? ~ !any}
 
 commands_ignore_unknown = _{ SOI ~ ws_nl* ~ (message | something)* ~message_no_nl? ~ WHITESPACE*}
 

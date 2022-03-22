@@ -767,6 +767,10 @@ fn do_parse_uci(s: &str, top_rule: Rule, mut ml: Option<&mut MessageList>) -> Re
 
                     UciMessage::Info(info_attr)
                 }
+                Rule::token => {
+                    // unreachable!("TOKEN")
+                    UciMessage::Unknown(pair.as_span().as_str().to_string(), None)
+                }
 
                 _ => unreachable!(),
             }
@@ -2335,15 +2339,15 @@ mod tests {
     #[test]
     fn test_no_line_at_end_parse_with_unknown_with_unknown() {
         let msgs = parse_with_unknown("uci\ndebug on\nucinewgame\nabc\nstop\nquit");
-        match &msgs[0] {
-            UciMessage::Unknown(s, _) => assert_eq!(s, "whatever"),
-            _ => panic!("Not a message")
-        }
-        assert_eq!(msgs.len(), 6);
-        // assert_eq!(msgs[0], UciMessage::Uci);
-        // assert_eq!(msgs[1], UciMessage::Debug(true));
-        // assert_eq!(msgs[2], UciMessage::UciNewGame);
-        // assert_eq!(msgs[4], UciMessage::Stop);
+        // match &msgs[0] {
+        //     UciMessage::Unknown(s, _) => assert_eq!(s, "whatever"),
+        //     _ => panic!("Not a message")
+        // }
+        assert_eq!(msgs.len(), 4);
+        assert_eq!(msgs[0], UciMessage::Uci);
+        assert_eq!(msgs[1], UciMessage::Debug(true));
+        assert_eq!(msgs[2], UciMessage::UciNewGame);
+        assert_eq!(msgs[3], UciMessage::Unknown("abc".to_string(), None));
         // assert_eq!(msgs[5], UciMessage::Quit);
     }
 
