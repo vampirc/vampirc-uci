@@ -2359,7 +2359,19 @@ mod tests {
         assert_eq!(msgs[5], UciMessage::Quit);
     }
 
-    // TODO add another similar test as above
+    #[test]
+    fn test_complex_parse_with_unknown() {
+        let msgs = parse_with_unknown("I am the walrus\nuci\ndebug on\nShould I stay \
+        or should I go?\nLondon calling\nquit\nAre we there yet?\n");
+        assert_eq!(msgs.len(), 7);
+        assert_eq!(msgs[0], UciMessage::Unknown("I am the walrus".to_string(), None));
+        assert_eq!(msgs[1], UciMessage::Uci);
+        assert_eq!(msgs[2], UciMessage::Debug(true));
+        assert_eq!(msgs[3], UciMessage::Unknown("Should I stay or should I go?".to_string(), None));
+        assert_eq!(msgs[4], UciMessage::Unknown("London calling".to_string(), None));
+        assert_eq!(msgs[5], UciMessage::Quit);
+        assert_eq!(msgs[6], UciMessage::Unknown("Are we there yet?".to_string(), None));
+    }
 
     #[test]
     fn test_no_line_at_end_parse_with_unknown() {
