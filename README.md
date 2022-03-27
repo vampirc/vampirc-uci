@@ -144,12 +144,14 @@ building your own chess engine or tooling with it.
 
 The full API documentation is available at [docs.rs](https://docs.rs/vampirc-uci/).
 
-### New in 0.11.1 (In progress - unreleased)
+### New in 0.11.1
 * Improved `parse_with_unknown(&str)` so that it correctly recognizes as much of input as possible. For example, whereas 
 earlier the input `uci\ndebug on\nucinewgame\nabc\nstop\nquit` would be returned as a single `Uci::Unknown` message, the 
 improved grammar support will return six separate messages, five of which will be proper UCI messages, while wrapping
 'abc' into `Uci::Unknown`.
-* Support for the [chess crate](https://crates.io/crates/chess) v. 3.2.0
+* A [fix](https://github.com/vampirc/vampirc-uci/pull/23) for incorrect serialization to string of the `btime`
+parameter, thanks to @analog_hors.
+* Support for the [chess crate](https://crates.io/crates/chess) v. 3.2.0.
 
 ### New in 0.11.0
 * Support for negative times, such as negative time left and time increment, as discussed in 
