@@ -150,7 +150,7 @@ earlier the input `uci\ndebug on\nucinewgame\nabc\nstop\nquit` would be returned
 improved grammar support will return six separate messages, five of which will be proper UCI messages, while wrapping
 'abc' into `Uci::Unknown`.
 * A [fix](https://github.com/vampirc/vampirc-uci/pull/23) for incorrect serialization to string of the `btime`
-parameter, thanks to @analog_hors.
+parameter, thanks to [@analog_hors](https://github.com/analog-hors).
 * Support for the [chess crate](https://crates.io/crates/chess) v. 3.2.0.
 
 ### New in 0.11.0
